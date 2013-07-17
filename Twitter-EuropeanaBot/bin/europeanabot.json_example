@@ -1,0 +1,12 @@
+{
+ "pidbase": "/tmp",
+ "name": "EuropanaBot",
+ "europeana_api_key": "XXX",
+ "europeana_api_url": "http://www.europeana.eu/api/v2/search.json",
+ "twitter_account": "EuropeanaBot",
+ "twitter_consumer_key": "XXX",
+ "twitter_consumer_secret": "XXXX",
+ "twitter_access_token": "XXXX",
+ "twitter_access_token_secret": "XXXX",
+ "sleep_time": 1000
+}
