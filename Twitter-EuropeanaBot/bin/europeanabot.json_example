@@ -8,5 +8,6 @@
  "twitter_consumer_secret": "XXXX",
  "twitter_access_token": "XXXX",
  "twitter_access_token_secret": "XXXX",
+ "url_shortener" : "http://is.gd/api.php?longurl=",
  "sleep_time": 1000
 }

@@ -132,6 +132,7 @@ has 'twitter_consumer_secret' => ( is => 'ro', isa => 'Str',  required => 1 );
 has 'twitter_access_token'    => ( is => 'ro', isa => 'Str',  required => 1 );
 has 'twitter_access_token_secret' =>
   ( is => 'ro', isa => 'Str', required => 1 );
+has 'url_shortener' => ( is=>'ro', isa=>'Str', required=>1);
 has 'sleep_time' => ( is => 'ro', isa => 'Int', default => 2000 );
 
 Log::Log4perl::init( $Bin . '/logging.conf' );
@@ -210,7 +211,7 @@ sub getEuropeanaResult {
         if ( $result_ref->{itemsCount} == 1 ) {
 
             # custom enrichment
-            $result_ref->{Status} = "OK";
+            $result_ref->{Status}     = "OK";
             $result_ref->{TitleQuery} = $p{TitleQuery};
             return $result_ref;
         }
@@ -238,7 +239,8 @@ Europeana Search Result
 sub post2Twitter {
     my ( $self, %p ) = @_;
     my $nt_result = undef;
-    my $status = undef;
+    my $short_url = undef;
+    my $status    = undef;
     my $nt        = Net::Twitter->new(
         traits              => [qw/API::RESTv1_1/],
         consumer_key        => $self->twitter_consumer_key . "XXXX",
@@ -247,16 +249,24 @@ sub post2Twitter {
         access_token_secret => $self->twitter_access_token_secret,
     );
 
-    $status = "Hi! Are you interested in an image of ".$p{Result}->{TitleQuery}." from ".$p{Result}->{items}->[0]->{year}->[0]."? Discover Europeana! ".$p{Result}->{items}->[0]->{guid};
-    
-    
-    $self->log->info("Posting Status: ".$status." (".length($status).")");
-    
-    
-    # eval { $nt_result = $nt->update('Hello, world!'); };
-    # if ( defined($@)) {
-    #     $self->logger->error("Error posting to ".$self->twitter_account.": ".$@."!");
-        
+    $short_url =
+      get( $self->url_shortener . $p{Result}->{items}->[0]->{guid} );
+
+    $status =
+        "Hi! Are you interested in an image of "
+      . $p{Result}->{TitleQuery}
+      . " from "
+      . $p{Result}->{items}->[0]->{year}->[0]
+      . "? Discover Europeana! "
+      . $short_url;
+
+    $self->log->info(
+        "Posting Status: " . $status . " (" . length($status) . ")" );
+
+# eval { $nt_result = $nt->update('Hello, world!'); };
+# if ( defined($@)) {
+#     $self->logger->error("Error posting to ".$self->twitter_account.": ".$@."!");
+
     # }
 
     # $self->log->debug( Dumper($nt_result) );
