@@ -43,5 +43,3 @@ Rename `logging.conf_example` to `logging.conf` and edit if necessary. Rename è
 
 * *sleep_time*
     interval between searches
-
-this is just a prelimiary version, without the whole functionality. Stay tuned for updates!
