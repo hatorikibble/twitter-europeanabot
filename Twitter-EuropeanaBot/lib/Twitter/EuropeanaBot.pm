@@ -21,86 +21,10 @@ Perhaps a little code snippet.
     my $foo = Twitter::EuropeanaBot->new();
     ...
 
-
-=head1 EXPORT
-
-A list of functions that can be exported.  You can delete this section
-if you don't export anything, such as for a purely object-oriented module.
-
-=head1 SUBROUTINES/METHODS
-
-=head2 function1
+=head2 METHODS
 
 =cut
 
-sub function1 {
-}
-
-=head2 function2
-
-=cut
-
-sub function2 {
-}
-
-=head1 AUTHOR
-
-Peter Mayr, C<< <at.peter.mayr at gmail.com> >>
-
-=head1 BUGS
-
-Please report any bugs or feature requests to C<bug-twitter-europeanabot at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Twitter-EuropeanaBot>.  I will be notified, and then you'll
-automatically be notified of progress on your bug as I make changes.
-
-
-
-
-=head1 SUPPORT
-
-You can find documentation for this module with the perldoc command.
-
-    perldoc Twitter::EuropeanaBot
-
-
-You can also look for information at:
-
-=over 4
-
-=item * RT: CPAN's request tracker (report bugs here)
-
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Twitter-EuropeanaBot>
-
-=item * AnnoCPAN: Annotated CPAN documentation
-
-L<http://annocpan.org/dist/Twitter-EuropeanaBot>
-
-=item * CPAN Ratings
-
-L<http://cpanratings.perl.org/d/Twitter-EuropeanaBot>
-
-=item * Search CPAN
-
-L<http://search.cpan.org/dist/Twitter-EuropeanaBot/>
-
-=back
-
-
-=head1 ACKNOWLEDGEMENTS
-
-
-=head1 LICENSE AND COPYRIGHT
-
-Copyright 2013 Peter Mayr.
-
-This program is free software; you can redistribute it and/or modify it
-under the terms of either: the GNU General Public License as published
-by the Free Software Foundation; or the Artistic License.
-
-See http://dev.perl.org/licenses/ for more information.
-
-
-=cut
 
 use strict;
 use warnings;
@@ -109,9 +33,12 @@ use namespace::autoclean;
 use FindBin qw($Bin);
 use Log::Log4perl qw( :levels);
 
+use File::Slurp;
 use JSON;
+use List::Util qw( shuffle);
 use LWP::Simple;
 use Net::Twitter;
+use URI::Escape;
 
 use Data::Dumper;
 
@@ -120,6 +47,13 @@ our $VERSION = '0.01';
 use Moose;
 with
   qw( MooseX::Getopt MooseX::Log::Log4perl MooseX::Daemonize MooseX::Runnable   );
+
+use Moose::Util::TypeConstraints;
+
+subtype 'SeedFile',
+    as 'Str',
+    where { -e $_ },
+    message {"Cannot find Seedfile at $_"};
 
 has 'debug'                   => ( is => 'ro', isa => 'Bool', default  => 0 );
 has 'dont_close_all_files'    => ( is => 'ro', isa => 'Bool', default  => 1 );
@@ -133,7 +67,10 @@ has 'twitter_access_token'    => ( is => 'ro', isa => 'Str',  required => 1 );
 has 'twitter_access_token_secret' =>
   ( is => 'ro', isa => 'Str', required => 1 );
 has 'url_shortener' => ( is=>'ro', isa=>'Str', required=>1);
+has 'seed_file' => ( is=>'ro', isa=>'SeedFile', required=>1);
 has 'sleep_time' => ( is => 'ro', isa => 'Int', default => 2000 );
+
+no Moose::Util::TypeConstraints;
 
 Log::Log4perl::init( $Bin . '/logging.conf' );
 
@@ -152,15 +89,23 @@ sub run {
 after start => sub {
     my $self       = shift;
     my $result_ref = undef;
+    my @seeds = ();
     return unless $self->is_daemon;
 
     $self->log->info("Daemon started..");
-    while (1) {
 
-        $result_ref = $self->getEuropeanaResult( TitleQuery => 'Linz' );
-        $self->post2Twitter( Result => $result_ref );
+    @seeds = @{$self->createSeed()};
+    $self->log->debug(scalar(@seeds)."x");
+    while (1) {
+      foreach my $term (@seeds){
+        $self->log->debug("searching for $term");
+        $result_ref = $self->getEuropeanaResult( TitleQuery => $term );
+        if ($result_ref->{Status} eq 'OK'){
+	  $self->post2Twitter( Result => $result_ref );
+        }
         $self->log->debug( "I'm going to sleep for " . $self->sleep_time );
         sleep( $self->sleep_time );
+      }
     }
 };
 
@@ -173,6 +118,44 @@ before stop => sub {
     my $self = shift;
     $self->log->info("Daemon ended..");
 };
+
+=head2 createSeed
+
+reads the contents of C<$self->seed_file> 
+and returns an array with search terms
+
+=cut
+
+sub createSeed {
+    my $self  = shift;
+    my @lines = ();
+    my @tmp   = ();
+
+    $self->log->debug( "Creating seeds from file: " . $self->seed_file );
+    eval { @lines = read_file( $self->seed_file ); };
+    if ($@) {
+        $self->log->error(
+                      "Cannot read seed_file " . $self->seed_file . ": " . $@ );
+        return \@lines;
+    }
+    else {
+        @lines = shuffle @lines;
+
+        #cleanup
+        foreach my $line (@lines) {
+
+            # 10302,Donnerskirchen,10302,M,7082,
+            if ( $line =~ s/^\d+,(.*?),.*?$/$1/ ) {
+                push( @tmp, $line );
+            }
+
+        }
+        @lines = @tmp;
+        $self->log->debug( scalar(@lines) . " searchterms generated" );
+        return \@lines;
+    }
+
+} ## end sub createSeed
 
 =head2 getEuropeanaResult(TitleQuery=>'Linz')
 
@@ -202,7 +185,7 @@ sub getEuropeanaResult {
       . "?wskey="
       . $self->europeana_api_key
       . "&rows=1&qf=TYPE:IMAGE&query=title:"
-      . $p{TitleQuery};
+      . uri_escape($p{TitleQuery});
 
     $self->log->debug( "QueryString is: " . $query_string );
     if ( $json_result = get $query_string) {
@@ -212,6 +195,10 @@ sub getEuropeanaResult {
 
             # custom enrichment
             $result_ref->{Status}     = "OK";
+            $result_ref->{TitleQuery} = $p{TitleQuery};
+            return $result_ref;
+        }else{
+            $result_ref->{Status}     = "NotOK";
             $result_ref->{TitleQuery} = $p{TitleQuery};
             return $result_ref;
         }
@@ -241,38 +228,81 @@ sub post2Twitter {
     my $nt_result = undef;
     my $short_url = undef;
     my $status    = undef;
-    my $nt        = Net::Twitter->new(
-        traits              => [qw/API::RESTv1_1/],
-        consumer_key        => $self->twitter_consumer_key . "XXXX",
-        consumer_secret     => $self->twitter_consumer_secret,
-        access_token        => $self->twitter_access_token,
-        access_token_secret => $self->twitter_access_token_secret,
+    my $nt = Net::Twitter->new(
+                      traits          => [qw/API::RESTv1_1/],
+                      consumer_key    => $self->twitter_consumer_key . "XXXX",
+                      consumer_secret => $self->twitter_consumer_secret,
+                      access_token    => $self->twitter_access_token,
+                      access_token_secret => $self->twitter_access_token_secret,
     );
 
-    $short_url =
-      get( $self->url_shortener . $p{Result}->{items}->[0]->{guid} );
+    $short_url = get( $self->url_shortener . $p{Result}->{items}->[0]->{guid} );
 
-    $status =
-        "Hi! Are you interested in an image of "
-      . $p{Result}->{TitleQuery}
-      . " from "
-      . $p{Result}->{items}->[0]->{year}->[0]
-      . "? Discover Europeana! "
-      . $short_url;
+    $status
+        = "Hi! Are you interested in an image of " . $p{Result}->{TitleQuery};
+
+    if ( defined( $p{Result}->{items}->[0]->{year}->[0] ) ) {
+        $status .= " from " . $p{Result}->{items}->[0]->{year}->[0];
+    }
+
+    $status .= "? Discover Europeana! " . $short_url;
 
     $self->log->info(
-        "Posting Status: " . $status . " (" . length($status) . ")" );
+                  "Posting Status: " . $status . " (" . length($status) . ")" );
 
-# eval { $nt_result = $nt->update('Hello, world!'); };
-# if ( defined($@)) {
-#     $self->logger->error("Error posting to ".$self->twitter_account.": ".$@."!");
+    # eval { $nt_result = $nt->update('Hello, world!'); };
+    # if ( defined($@)) {
+    #     $self->logger->error("Error posting to ".$self->twitter_account.": ".$@."!");
 
     # }
 
     # $self->log->debug( Dumper($nt_result) );
 
-}
+} ## end sub post2Twitter
 
 __PACKAGE__->meta->make_immutable;
 
 1;    # End of Twitter::EuropeanaBot
+
+=head1 AUTHOR
+
+Peter Mayr, C<< <at.peter.mayr at gmail.com> >>
+
+=head1 BUGS
+
+Please report any bugs at L<https://github.com/hatorikibble/twitter-europeanabot>
+
+=head1 SUPPORT
+
+You can find documentation for this module with the perldoc command.
+
+    perldoc Twitter::EuropeanaBot
+
+
+You can also look for information at:
+
+=over 4
+
+=item * GitHub
+
+L<https://github.com/hatorikibble/twitter-europeanabot>
+
+=back
+
+
+=head1 ACKNOWLEDGEMENTS
+
+Basic idea taken from L<https://twitter.com/DPLAbot>
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2013 Peter Mayr.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+
+=cut
