@@ -104,10 +104,10 @@ after start => sub {
             $result_ref = $self->getEuropeanaResult( TitleQuery => $term );
             if ( $result_ref->{Status} eq 'OK' ) {
                 $self->post2Twitter( Result => $result_ref );
+                $self->log->debug(
+                    "I'm going to sleep for " . $self->sleep_time . "seconds" );
+                sleep( $self->sleep_time );
             }
-            $self->log->debug(
-                "I'm going to sleep for " . $self->sleep_time . "seconds" );
-            sleep( $self->sleep_time );
         }
     }
 };
