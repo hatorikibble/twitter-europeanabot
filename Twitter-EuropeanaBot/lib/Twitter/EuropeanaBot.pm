@@ -89,6 +89,7 @@ after start => sub {
     my $self       = shift;
     my $result_ref = undef;
     my @seeds      = ();
+    my $i          = 0;
     return unless $self->is_daemon;
 
     $self->log->info("Daemon started..");
@@ -97,12 +98,15 @@ after start => sub {
 
     while (1) {
         foreach my $term (@seeds) {
-            $self->log->debug("searching for $term");
+            $i++;
+            $self->log->debug(
+                "searching for $term (" . $i . " of " . scalar(@seeds) . ")" );
             $result_ref = $self->getEuropeanaResult( TitleQuery => $term );
             if ( $result_ref->{Status} eq 'OK' ) {
                 $self->post2Twitter( Result => $result_ref );
             }
-            $self->log->debug( "I'm going to sleep for " . $self->sleep_time. "seconds" );
+            $self->log->debug(
+                "I'm going to sleep for " . $self->sleep_time . "seconds" );
             sleep( $self->sleep_time );
         }
     }
@@ -268,7 +272,7 @@ sub post2Twitter {
     else {
 
         eval { $nt_result = $nt->update($status); };
-        if ( $@ ) {
+        if ($@) {
             $self->logger->error( "Error posting to "
                   . $self->twitter_account . ": "
                   . $@
