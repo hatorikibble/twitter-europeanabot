@@ -266,22 +266,28 @@ sub post2Twitter {
     $self->log->info(
         "Posting Status: " . $status . " (" . length($status) . ")" );
 
-    if ( length($status) > 140 ) {
-        $self->log->warn("Status is too long!");
+    if ( $self->debug == 1 ) {
+        $self->log->info("Just kidding! We are in debug mode...");
     }
     else {
 
-        eval { $nt_result = $nt->update($status); };
-        if ($@) {
-            $self->logger->error( "Error posting to "
-                  . $self->twitter_account . ": "
-                  . $@
-                  . "!" );
-
+        if ( length($status) > 140 ) {
+            $self->log->warn("Status is too long!");
         }
-    }
+        else {
 
-    # $self->log->debug( Dumper($nt_result) );
+            eval { $nt_result = $nt->update($status); };
+            if ($@) {
+                $self->logger->error( "Error posting to "
+                      . $self->twitter_account . ": "
+                      . $@
+                      . "!" );
+
+            }
+        }
+
+        # $self->log->debug( Dumper($nt_result) );
+    }
 
 } ## end sub post2Twitter
 

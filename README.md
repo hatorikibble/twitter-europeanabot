@@ -29,6 +29,10 @@ Rename `logging.conf_example` to `logging.conf` and edit if necessary. Rename è
 * *pidbase*
     location of PID-file, should be user-writable
 
+* *debug*
+    if set to *1*, all messages are only written into the logfile and not
+    posted on twitter, default is *0*
+    
 * *europeana_api_key*
     see step 1
 
