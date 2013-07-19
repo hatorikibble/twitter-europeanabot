@@ -43,3 +43,9 @@ Rename `logging.conf_example` to `logging.conf` and edit if necessary. Rename è
 
 * *sleep_time*
     interval between searches
+
+More Information
+==================
+
+* Inspiration: [DPLABot] (https://twitter.com/DPLAbot)
+* [Blogpost in German] (https://hatorikibble.wordpress.com/2013/07/19/ich-hab-da-mal-einen-osterreichischen-europeana-bot-geschrieben/)
