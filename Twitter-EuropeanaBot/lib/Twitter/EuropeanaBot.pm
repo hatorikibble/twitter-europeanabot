@@ -259,7 +259,7 @@ sub post2Twitter {
 
     }
     else {
-        $status =~ s/(from|at) _YEAR_//;
+        $status =~ s/ (from|at) _YEAR_//;
 
     }
 
