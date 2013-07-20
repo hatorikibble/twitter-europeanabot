@@ -188,7 +188,6 @@ sub createLocationSeeds {
         return \@lines;
     }
     else {
-        @lines = shuffle @lines;
 
         #cleanup
         foreach my $line (@lines) {
@@ -353,7 +352,7 @@ posts a search result from the Location Tweet file
 sub writeLocationTweet {
     my $self       = shift;
     my $result_ref = undef;
-    my @seeds      = @{ $self->{LocationSeeds} };
+    my @seeds      = shuffle @{ $self->{LocationSeeds} };
     my @messages   = (
         "Hi! I found an image of _TITLE_ from _YEAR_ at \#europeana: _URL_",
         "Oh! _TITLE_ at _YEAR_ from \#europeana: _URL_",
