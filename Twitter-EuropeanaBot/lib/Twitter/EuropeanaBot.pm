@@ -38,6 +38,7 @@ use JSON;
 use List::Util qw( shuffle);
 use LWP::Simple;
 use Net::Twitter;
+use POSIX;
 use Switch;
 use URI::Escape;
 
@@ -92,6 +93,8 @@ after start => sub {
     my $result_ref = undef;
     my @seeds      = ();
     my $range      = 100;
+    my $random     = undef;
+
     return unless $self->is_daemon;
 
     $self->log->info("Daemon started..");
@@ -105,14 +108,25 @@ after start => sub {
     while (1) {
 
         # what shall we do? let's roll the dice?
+        $random = int( rand($range) );
 
-        switch ( int( rand($range) ) ) {
+        # cheat if we have a specific date..
+
+        # Monday Morning, 9 o'clock
+        if (   ( POSIX::strftime( "%u", localtime() ) == 1 ) # Monday
+            && ( POSIX::strftime( "%H", localtime() ) eq '09' ) )
+        {
+            $random = 101;
+        }
+
+        switch ($random) {
             case [ 0 .. 8 ] { $self->writeHammerTimeTweet(); }
             case [ 9 .. 15 ] {
                 $self->writeUnicornTweet();
             }
             case [ 16 .. 80 ]{ $self->writeLocationTweet(); }
             case [ 81 .. 100 ]{ $self->writeCatTweet(); }
+            case 101 { $self->writeMondayTweet(); }
         }
         $self->log->debug(
             "I'm going to sleep for " . $self->sleep_time . " seconds.." );
@@ -466,6 +480,36 @@ sub writeUnicornTweet {
         Field => 'title',
         Type  => 'IMAGE',
         Rows  => 12
+    );
+    if ( $result_ref->{Status} eq 'OK' ) {
+        $self->post2Twitter(
+            Result  => $result_ref,
+            Message => $message
+        );
+
+        return;
+    }
+}
+
+=head2 writeMondayTweet()
+
+posts a picture of some cute kittens
+
+=cut
+
+sub writeMondayTweet {
+    my $self       = shift;
+    my $result_ref = undef;
+    my $message =
+"I know it's Monday morning.. Here's a picture of some cute kittens to cheer you up! _URL_";
+
+    $self->log->debug("I'm gonna tweet about Monday Mimimimi");
+
+    $result_ref = $self->getEuropeanaResults(
+        Query => "cute kittens",
+        Field => 'title',
+        Type  => 'IMAGE',
+        Rows  => 5
     );
     if ( $result_ref->{Status} eq 'OK' ) {
         $self->post2Twitter(
