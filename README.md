@@ -7,6 +7,10 @@ The programm takes a list of "seed terms" from a file, searches for correspondin
 
 In the current implementation I used [Austrian place names] (http://www.statistik.at/web_de/klassifikationen/regionale_gliederungen/gemeinden/index.html).
 
+What's New?
+===========
+
+Please refer to the CHANGES file
 
 How To Deploy
 =============

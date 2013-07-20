@@ -16,6 +16,7 @@ WriteMakefile(
     PREREQ_PM => {
         'Test::More'            => 0,
         'Config::Any::JSON'     => 0,
+       # 'DBD::SQLite'           => 0,
         'File::Slurp'           => 1,
         'JSON'                  => '2.59',
         'List::Util'            => 0,
@@ -26,6 +27,7 @@ WriteMakefile(
         'MooseX::Log::Log4perl' => 0,
         'MooseX::Runnable'      => 0,
         'Net::Twitter'          => '4.0',
+        'Switch'                => 0,
         'URI::Escape'           => 0,
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
