@@ -59,7 +59,6 @@ subtype 'File',
 has 'debug'                   => ( is => 'ro', isa => 'Bool', default  => 0 );
 has 'dont_close_all_files'    => ( is => 'ro', isa => 'Bool', default  => 1 );
 has 'name'                    => ( is => 'ro', isa => 'Str',  required => 1 );
-has 'sqlite_db'               => ( is => 'ro', isa => 'File', required => 1 );
 has 'europeana_api_key'       => ( is => 'ro', isa => 'Str',  required => 1 );
 has 'europeana_api_url'       => ( is => 'ro', isa => 'Str',  required => 1 );
 has 'twitter_account'         => ( is => 'ro', isa => 'Str',  required => 1 );
