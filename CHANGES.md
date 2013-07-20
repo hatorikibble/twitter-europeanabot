@@ -18,3 +18,5 @@ this version tries to bring a little bit of fun into the bot
 * The bot has a soft spot for unicorns and is not afraid to show it!
 
 * Sometimes it's [Hammertime](http://www.urbandictionary.com/define.php?term=Hammertime)!
+
+* Tries to ease Monday mornings by posting pictures of cute kittens
