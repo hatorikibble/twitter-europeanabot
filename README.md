@@ -10,7 +10,7 @@ In the current implementation I used [Austrian place names] (http://www.statisti
 What's New?
 ===========
 
-Please refer to the CHANGES file
+Please refer to the [CHANGES](CHANGES.md) file
 
 How To Deploy
 =============
