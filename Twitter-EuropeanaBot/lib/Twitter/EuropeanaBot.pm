@@ -371,7 +371,7 @@ sub writeLocationTweet {
             Query => $term,
             Field => 'title',
             Type  => 'IMAGE',
-            Rows  => 1
+            Rows  => 10
         );
         if ( $result_ref->{Status} eq 'OK' ) {
             $self->post2Twitter(
