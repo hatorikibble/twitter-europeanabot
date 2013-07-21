@@ -22,3 +22,7 @@ this version tries to bring a little bit of fun into the bot
 * Tries to ease Monday mornings by posting pictures of cute kittens
 
 * Participates in #FollowFriday and recommends Europeana-specific Twitter accounts
+
+### Version 1.1.1 Bugfixes
+
+* use location index and not title for searching place names
