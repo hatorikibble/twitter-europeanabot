@@ -113,20 +113,34 @@ after start => sub {
         # cheat if we have a specific date..
 
         # Monday Morning, 9 o'clock
-        if (   ( POSIX::strftime( "%u", localtime() ) == 1 ) # Monday
-            && ( POSIX::strftime( "%H", localtime() ) eq '09' ) )
+        if (
+            ( POSIX::strftime( "%u", localtime() ) == 1 )    # Monday
+            && ( POSIX::strftime( "%H", localtime() ) eq '09' )
+          )
         {
             $random = 101;
         }
 
+        # Friday, 13 o'clock
+        if (
+            ( POSIX::strftime( "%u", localtime() ) == 5 )    # Friday
+            && ( POSIX::strftime( "%H", localtime() ) eq '13' )
+          )
+        {
+            $random = 102;
+        }
+        
         switch ($random) {
-            case [ 0 .. 8 ] { $self->writeHammerTimeTweet(); }
-            case [ 9 .. 15 ] {
+            case [ 0 .. 7 ] { $self->writeHammerTimeTweet(); }
+            case [ 8 .. 12 ] {
                 $self->writeUnicornTweet();
             }
-            case [ 16 .. 80 ]{ $self->writeLocationTweet(); }
+            case [ 13 .. 80 ]{ $self->writeLocationTweet(); }
             case [ 81 .. 100 ]{ $self->writeCatTweet(); }
+
+            # special cases
             case 101 { $self->writeMondayTweet(); }
+            case 102 { $self-> writeFollowFridayTweet(); }
         }
         $self->log->debug(
             "I'm going to sleep for " . $self->sleep_time . " seconds.." );
@@ -309,23 +323,28 @@ sub post2Twitter {
     my $nt_result = undef;
     my $short_url = undef;
     my $status    = undef;
-    my @items     = @{ $p{Result}->{items} };
-
-    @items = shuffle @items;
-
-    $short_url = get( $self->url_shortener . $items[0]->{guid} );
+    my @items     = undef;
 
     $status = $p{Message};
-    $status =~ s/_TITLE_/$p{Result}->{Query}/;
-    $status =~ s/_URL_/$short_url/;
 
-    if ( defined( $items[0]->{year}->[0] ) ) {
-        $status =~ s/_YEAR_/$items[0]->{year}->[0]/;
+    if ( defined( $p{Result} ) ) {
+        @items = @{ $p{Result}->{items} };
 
-    }
-    else {
-        $status =~ s/ (from|at) _YEAR_//;
+        @items = shuffle @items;
 
+        $short_url = get( $self->url_shortener . $items[0]->{guid} );
+
+        $status =~ s/_TITLE_/$p{Result}->{Query}/;
+        $status =~ s/_URL_/$short_url/;
+
+        if ( defined( $items[0]->{year}->[0] ) ) {
+            $status =~ s/_YEAR_/$items[0]->{year}->[0]/;
+
+        }
+        else {
+            $status =~ s/ (from|at) _YEAR_//;
+
+        }
     }
 
     $status = decode( 'utf8', $status );
@@ -519,6 +538,34 @@ sub writeMondayTweet {
 
         return;
     }
+}
+
+=head2 writeFollowFridayTweet()
+
+posts a Follower suggestions
+
+=cut
+
+sub writeFollowFridayTweet {
+    my $self       = shift;
+    my $result_ref = undef;
+    my @messages   = (
+"It's \#FollowFriday! Why not follow the official Europeana account? \@EuropeanaEU \#ff",
+"It's \#FollowFriday! Wanna learn more about the techie side of Europeana? Why not follow \@EuropeanaTech? \#ff",
+"I'm not really interested in fashion, but maybe you? Follow \@EurFashion! \#ff",
+"Wanna learn more about the cooperation between Wikipedia and Europeana? Follow \@wikieuropeana! \#ff"
+    );
+
+    @messages = shuffle @messages;
+
+    $self->log->debug("I'm gonna tweet about \#FollowFriday");
+
+    $self->post2Twitter(
+        Result  => $result_ref,
+        Message => $messages[0],
+    );
+
+    return;
 }
 
 __PACKAGE__->meta->make_immutable;
