@@ -400,7 +400,7 @@ sub writeLocationTweet {
 
         $result_ref = $self->getEuropeanaResults(
             Query => $term,
-            Field => 'title',
+            Field => 'where',
             Type  => 'IMAGE',
             Rows  => 10
         );
