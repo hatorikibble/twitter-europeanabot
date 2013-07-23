@@ -57,3 +57,4 @@ More Information
 
 * Inspiration: [DPLABot] (https://twitter.com/DPLAbot)
 * [Blogpost in German] (https://hatorikibble.wordpress.com/2013/07/19/ich-hab-da-mal-einen-osterreichischen-europeana-bot-geschrieben/)
+* [Blogpost in German about Version 1.1] (http://hatorikibble.wordpress.com/2013/07/22/der-europeanabot-mag-jetzt-auch-katzen/(
