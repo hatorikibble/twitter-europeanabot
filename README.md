@@ -5,7 +5,7 @@ the aim of this twitter bot is to explore the diverse contents of [Europeana](ht
 
 The programm takes a list of "seed terms" from a file, searches for corresponding images and posts the URL of the first result to the Twitter-Account [*EuropeanaBot*](http://www.twitter.com/EuropeanaBot).
 
-In the current implementation I used [Austrian place names] (http://www.statistik.at/web_de/klassifikationen/regionale_gliederungen/gemeinden/index.html).
+In the current implementation I used [Austrian place names] (http://www.statistik.at/web_de/klassifikationen/regionale_gliederungen/gemeinden/index.html) and a list of [Nobel Prize winners](http://console.apihq.com/nobel-prize-api).
 
 What's New?
 ===========
