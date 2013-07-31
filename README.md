@@ -23,7 +23,8 @@ you'll need an [Europeana API-key](http://www.europeana.eu/portal/api/registrati
 2) get seed file
 ----------------
 
-I used a list of Austrian place names which I got from [Statistik Austria] (http://www.statistik.at/web_de/klassifikationen/regionale_gliederungen/gemeinden/index.html).
+I used a list of Austrian place names which I got from [Statistik Austria] (http://www.statistik.at/web_de/klassifikationen/regionale_gliederungen/gemeinden/index.html) as a seed file for location searches.
+A CSV file with all Nobel Prize winners was found at [http://console.apihq.com/nobel-prize-api](http://console.apihq.com/nobel-prize-api).
 
 3) edit config files
 --------------------
@@ -46,9 +47,12 @@ Rename `logging.conf_example` to `logging.conf` and edit if necessary. Rename è
 * *url_shortener*
    generally the result urls are too long, here you can user also any other service
 
-* *seed_file*
-    list of possible search terms in a csv file. If you use a different source file, you may have to adjust the subroutine `createSeed` in `EuropeanaBot.pm`
+* *location_file*
+    list of possible location search terms in a csv file. If you use a different source file, you may have to adjust the subroutine `createSeed` in `EuropeanaBot.pm`
 
+* *nobel_file*
+    CSV file with a list of Nobel Prize winners
+    
 * *sleep_time*
     interval between searches
 

@@ -69,7 +69,8 @@ has 'twitter_access_token'    => ( is => 'ro', isa => 'Str',  required => 1 );
 has 'twitter_access_token_secret' =>
   ( is => 'ro', isa => 'Str', required => 1 );
 has 'url_shortener' => ( is => 'ro', isa => 'Str',  required => 1 );
-has 'seed_file'     => ( is => 'ro', isa => 'File', required => 1 );
+has 'location_file' => ( is => 'ro', isa => 'File', required => 1 );
+has 'nobel_file'    => ( is => 'ro', isa => 'File', required => 1 );
 has 'sleep_time'    => ( is => 'ro', isa => 'Int',  default  => 2000 );
 
 no Moose::Util::TypeConstraints;
@@ -105,6 +106,8 @@ after start => sub {
 
     $self->createLocationSeeds();
 
+    $self->createNobelSeeds();
+
     while (1) {
 
         # what shall we do? let's roll the dice?
@@ -129,18 +132,22 @@ after start => sub {
         {
             $random = 102;
         }
+
+        $random = 31;
+        
         
         switch ($random) {
-            case [ 0 .. 7 ] { $self->writeHammerTimeTweet(); }
-            case [ 8 .. 12 ] {
+            case [ 0 .. 5 ] { $self->writeHammerTimeTweet(); }
+            case [ 6 .. 10 ] {
                 $self->writeUnicornTweet();
             }
-            case [ 13 .. 80 ]{ $self->writeLocationTweet(); }
-            case [ 81 .. 100 ]{ $self->writeCatTweet(); }
+            case [ 11 .. 30 ]{ $self->writeLocationTweet(); }
+            case [ 31 .. 80 ]{ $self->writeNobelTweet(); }
+            case [ 91 .. 100 ]{ $self->writeCatTweet(); }
 
             # special cases
             case 101 { $self->writeMondayTweet(); }
-            case 102 { $self-> writeFollowFridayTweet(); }
+            case 102 { $self->writeFollowFridayTweet(); }
         }
         $self->log->debug(
             "I'm going to sleep for " . $self->sleep_time . " seconds.." );
@@ -198,7 +205,7 @@ sub lookForMentions {
 
 =head2 createLocationSeeds()
 
-reads the contents of C<$self->seed_file> 
+reads the contents of C<$self->location_file> 
 and creates C<$self->{LocationSeeds}>
 
 =cut
@@ -208,11 +215,11 @@ sub createLocationSeeds {
     my @lines = ();
     my @tmp   = ();
 
-    $self->log->debug( "Creating seeds from file: " . $self->seed_file );
-    eval { @lines = read_file( $self->seed_file ); };
+    $self->log->debug( "Creating seeds from file: " . $self->location_file );
+    eval { @lines = read_file( $self->location_file ); };
     if ($@) {
         $self->log->error(
-            "Cannot read seed_file " . $self->seed_file . ": " . $@ );
+            "Cannot read seed_file " . $self->location_file . ": " . $@ );
         return \@lines;
     }
     else {
@@ -230,6 +237,38 @@ sub createLocationSeeds {
         @lines = @tmp;
         $self->log->debug( scalar(@lines) . " searchterms generated" );
         $self->{LocationSeeds} = \@lines;
+    }
+
+} ## end sub createSeed
+
+=head2 createNobelSeeds()
+
+reads the contents of C<$self->nobel_file> 
+and creates C<$self->{NobelSeeds}>
+
+=cut
+
+sub createNobelSeeds {
+    my $self = shift;
+
+    my @lines = ();
+
+    $self->log->debug( "Creating seeds from file: " . $self->nobel_file );
+    eval { @lines = read_file( $self->nobel_file ); };
+    if ($@) {
+        $self->log->error(
+            "Cannot read seed_file " . $self->nobel_file . ": " . $@ );
+        return \@lines;
+
+    }
+    else {
+
+        @lines = @lines[ 1 .. $#lines ];
+
+        # we don't need the header..
+
+        $self->log->debug( scalar(@lines) . " searchterms generated" );
+        $self->{NobelSeeds} = \@lines;
     }
 
 } ## end sub createSeed
@@ -403,6 +442,54 @@ sub writeLocationTweet {
             Field => 'where',
             Type  => 'IMAGE',
             Rows  => 10
+        );
+        if ( $result_ref->{Status} eq 'OK' ) {
+            $self->post2Twitter(
+                Result  => $result_ref,
+                Message => $messages[0]
+            );
+
+            return;
+        }
+    }
+}
+
+=head2 writeNobelTweet()
+
+posts a search result from the Nobel Prizes Tweet file
+
+=cut
+
+sub writeNobelTweet {
+    my $self       = shift;
+    my $result_ref = undef;
+    my $name       = undef;
+    my @fields     = ();
+
+    my @seeds    = shuffle @{ $self->{NobelSeeds} };
+    my @messages = (
+"Hi! Did you know _TITLE_ got a Nobel Prize? \#europeana has a picture _URL_",
+        "Oh! Nobel Prize for _TITLE_ at _YEAR_! Check out \#europeana: _URL_",
+"Look! A \#europeana image of Nobel Prize winner _TITLE_ at _YEAR_: _URL_",
+"Hi! Are you interested in an \#europeana image of Nobel Prize winner _TITLE_ from _YEAR_? _URL_"
+    );
+    @messages = shuffle @messages;
+
+    $self->log->debug("I'm gonna tweet about a Nobel Prize winner!");
+
+    foreach my $item (@seeds) {
+        @fields = split( /,/, $item );
+
+        #year,category,overallMotivation,id,firstname,surname,motivation,share
+
+        $fields[4] =~ s/"//g;
+        $fields[5] =~ s/"//g;
+
+        $result_ref = $self->getEuropeanaResults(
+            Query => "\"" . $fields[4] . " " . $fields[5] . "\"",
+            Field => 'title',    # 'who' doesn't find enough
+            Type  => 'IMAGE',
+            Rows  => 5
         );
         if ( $result_ref->{Status} eq 'OK' ) {
             $self->post2Twitter(

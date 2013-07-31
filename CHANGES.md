@@ -23,6 +23,12 @@ this version tries to bring a little bit of fun into the bot
 
 * Participates in #FollowFriday and recommends Europeana-specific Twitter accounts
 
-### Version 1.1.1 Bugfixes
+Version 1.2 "The Nobel Prize edition"
+-------------------------------------
+
+A broadened the scope of the bot a little bit with this edition. A new seed file with a list of all Nobel Prize
+winners is used to search for pictures in Europeana.
+
+Bugfix
 
 * use location index and not title for searching place names
