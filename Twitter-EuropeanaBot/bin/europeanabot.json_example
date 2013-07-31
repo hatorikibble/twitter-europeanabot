@@ -10,5 +10,7 @@
  "twitter_access_token": "XXXX",
  "twitter_access_token_secret": "XXXX",
  "url_shortener" : "http://is.gd/api.php?logstats=1&longurl=",
+ "location_file" : "/tmp/location.csv",
+ "nobel_file": "/tmp/prize.csv",
  "sleep_time": 1000
 }
