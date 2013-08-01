@@ -139,8 +139,8 @@ after start => sub {
             case [ 6 .. 10 ] {
                 $self->writeUnicornTweet();
             }
-            case [ 11 .. 30 ]{ $self->writeLocationTweet(); }
-            case [ 31 .. 80 ]{ $self->writeNobelTweet(); }
+            case [ 11 .. 40 ]{ $self->writeLocationTweet(); }
+            case [ 41 .. 90 ]{ $self->writeNobelTweet(); }
             case [ 91 .. 100 ]{ $self->writeCatTweet(); }
 
             # special cases
