@@ -36,7 +36,7 @@ use Encode;
 use File::Slurp;
 use JSON;
 use List::Util qw( shuffle);
-use LWP::Simple;
+use LWP::Simple qw(get $ua);
 use Net::Twitter;
 use POSIX;
 use Switch;
@@ -71,7 +71,10 @@ has 'twitter_access_token_secret' =>
 has 'url_shortener' => ( is => 'ro', isa => 'Str',  required => 1 );
 has 'location_file' => ( is => 'ro', isa => 'File', required => 1 );
 has 'nobel_file'    => ( is => 'ro', isa => 'File', required => 1 );
-has 'sleep_time'    => ( is => 'ro', isa => 'Int',  default  => 2000 );
+has 'wikipedia_base' =>
+  ( is => 'ro', isa => 'Str', default => "http://en.wikipedia.org" );
+
+has 'sleep_time' => ( is => 'ro', isa => 'Int', default => 2000 );
 
 no Moose::Util::TypeConstraints;
 
@@ -133,19 +136,20 @@ after start => sub {
             $random = 102;
         }
 
-               
         switch ($random) {
-            case [ 0 .. 5 ] { $self->writeHammerTimeTweet(); }
-            case [ 6 .. 10 ] {
+            case [ 0 .. 4 ] { $self->writeHammerTimeTweet(); }
+            case [ 5 .. 9 ] {
                 $self->writeUnicornTweet();
             }
-            case [ 11 .. 40 ]{ $self->writeLocationTweet(); }
-            case [ 41 .. 90 ]{ $self->writeNobelTweet(); }
+            case [ 10 .. 35 ]{ $self->writeLocationTweet(); }
+            case [ 36 .. 65 ]{ $self->writeNobelTweet(); }
+            case [ 66 .. 90 ] { $self->writeRandomWikipediaTweet(); }
             case [ 91 .. 100 ]{ $self->writeCatTweet(); }
 
             # special cases
             case 101 { $self->writeMondayTweet(); }
             case 102 { $self->writeFollowFridayTweet(); }
+
         }
         $self->log->debug(
             "I'm going to sleep for " . $self->sleep_time . " seconds.." );
@@ -308,10 +312,23 @@ sub getEuropeanaResults {
     $p{Type} = 'IMAGE' unless ( defined( $p{Type} ) );
     $p{Rows} = 1       unless ( defined( $p{Rows} ) );
 
+    $self->log->debug( "Query: " . $p{Query} );
+
     #build $query_string
-    $query_string = sprintf( "%s?wskey=%s&rows=%s&qf=TYPE:%s&query=%s:%s",
-        $self->europeana_api_url, $self->europeana_api_key, $p{Rows}, $p{Type},
-        $p{Field}, uri_escape( $p{Query} ) );
+    eval {
+        $query_string = sprintf( "%s?wskey=%s&rows=%s&qf=TYPE:%s&query=%s:%s",
+            $self->europeana_api_url, $self->europeana_api_key, $p{Rows},
+            $p{Type}, $p{Field}, uri_escape_utf8( $p{Query} ) );
+    };
+
+## Please see file perltidy.ERR
+## Please see file perltidy.ERR
+    if ($@) {
+        $self->log->error( "Error while creating query string: " . $@ );
+        $result_ref->{Status} = "NotOK";
+        $result_ref->{Query}  = $p{Query};
+        return $result_ref;
+    }
 
     $self->log->debug( "QueryString is: " . $query_string );
     if ( $json_result = get $query_string) {
@@ -497,6 +514,82 @@ sub writeNobelTweet {
 
             return;
         }
+    }
+}
+
+=head2 writeRandomWikipediaTweet()
+
+posts a search result to a random Wikipedia page
+
+=cut
+
+sub writeRandomWikipediaTweet {
+    my $self        = shift;
+    my $result_ref  = undef;
+    my $json_result = undef;
+    my $title       = undef;
+    my $wurl        = undef;
+    my $i           = 0;
+
+    my @messages = (
+"Hi! I found an #wikipedia entry for _TITLE_: _WURL_ \#europeana has a picture: _URL_",
+"Oh! A picture of _TITLE_  at _YEAR_ from \#europeana: _URL_ Learn More at #wikipedia: _WURL_",
+"_TITLE_: #wikipedia entry _WURL_  #europeana picture: _URL_ You are welcome!"
+    );
+    @messages = shuffle @messages;
+
+    $self->log->debug("I'm gonna tweet about a random Wikipedia Page!");
+
+    # set UserAgent per API Policy
+    # http://www.mediawiki.org/wiki/API#Identifying_your_client
+    $ua->agent(
+'EuropeanaBot (https://github.com/hatorikibble/twitter-europeanabot; at.peter.mayr@gmail.com)'
+    );
+
+    while (1) {
+        $i++;
+
+        $json_result =
+          get( $self->wikipedia_base
+              . "/w/api.php?action=query&list=random&rnnamespace=0&rnlimit=1&format=json"
+          );
+        $result_ref = decode_json($json_result);
+        $self->log->debug(
+            "Result: " . $result_ref->{query}->{random}->[0]->{title} );
+
+        if ( $title = $result_ref->{query}->{random}->[0]->{title} ) {
+
+            $result_ref = $self->getEuropeanaResults(
+                Query => "\"" . $title . "\"",
+                Field => 'title',
+                Type  => 'IMAGE',
+                Rows  => 10
+            );
+            if ( $result_ref->{Status} eq 'OK' ) {
+                $self->log->info(
+"Needed $i tries to find a Result for a random Wikipedia Page!"
+                );
+
+                # get shortened wikipedia URL
+                $wurl =
+                  get(  $self->url_shortener
+                      . $self->wikipedia_base
+                      . "/wiki/"
+                      . uri_escape($title) );
+
+                $messages[0] =~ s/_WURL_/$wurl/;
+
+                $self->post2Twitter(
+                    Result  => $result_ref,
+                    Message => $messages[0]
+                );
+
+                return;
+            }
+            sleep( 1 + int( rand(4) ) );    # sleep max 5 seconds
+
+        }
+
     }
 }
 

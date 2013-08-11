@@ -12,5 +12,6 @@
  "url_shortener" : "http://is.gd/api.php?logstats=1&longurl=",
  "location_file" : "/tmp/location.csv",
  "nobel_file": "/tmp/prize.csv",
+ "wikipedia_base": "http://en.wikipedia.org",
  "sleep_time": 1000
 }
