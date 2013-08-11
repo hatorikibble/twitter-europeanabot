@@ -13,5 +13,6 @@
  "location_file" : "/tmp/location.csv",
  "nobel_file": "/tmp/prize.csv",
  "wikipedia_base": "http://en.wikipedia.org",
+ "user_agent": "EuropeanaBot (https://github.com/hatorikibble/twitter-europeanabot)",
  "sleep_time": 1000
 }

@@ -32,3 +32,10 @@ winners is used to search for pictures in Europeana.
 Bugfix
 
 * use location index and not title for searching place names
+
+Version 1.3 "The Wikipedia edition"
+-----------------------------------
+
+* Link not only to a Europeana image of Nobel Prize Winners but also to their Wikipedia entry
+
+* Query Wikipedia's "Random Page" feature and search for corresponding Europeana Images

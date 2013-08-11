@@ -71,6 +71,7 @@ has 'twitter_access_token_secret' =>
 has 'url_shortener' => ( is => 'ro', isa => 'Str',  required => 1 );
 has 'location_file' => ( is => 'ro', isa => 'File', required => 1 );
 has 'nobel_file'    => ( is => 'ro', isa => 'File', required => 1 );
+has 'user_agent' => ( is => 'ro', isa => 'Str', default => "EuropeanaBot" );
 has 'wikipedia_base' =>
   ( is => 'ro', isa => 'Str', default => "http://en.wikipedia.org" );
 
@@ -321,8 +322,6 @@ sub getEuropeanaResults {
             $p{Type}, $p{Field}, uri_escape_utf8( $p{Query} ) );
     };
 
-## Please see file perltidy.ERR
-## Please see file perltidy.ERR
     if ($@) {
         $self->log->error( "Error while creating query string: " . $@ );
         $result_ref->{Status} = "NotOK";
@@ -479,10 +478,11 @@ sub writeNobelTweet {
     my $self       = shift;
     my $result_ref = undef;
     my $name       = undef;
+    my $w_url      = undef;
+    my $w_content  = undef;
     my @fields     = ();
-
-    my @seeds    = shuffle @{ $self->{NobelSeeds} };
-    my @messages = (
+    my @seeds      = shuffle @{ $self->{NobelSeeds} };
+    my @messages   = (
 "Hi! Did you know _TITLE_ got a Nobel Prize? \#europeana has a picture _URL_",
         "Oh! Nobel Prize for _TITLE_ at _YEAR_! Check out \#europeana: _URL_",
 "Look! A \#europeana image of Nobel Prize winner _TITLE_ at _YEAR_: _URL_",
@@ -507,6 +507,29 @@ sub writeNobelTweet {
             Rows  => 5
         );
         if ( $result_ref->{Status} eq 'OK' ) {
+
+            # is there a Wikipedia Page?
+            $w_url =
+                $self->wikipedia_base 
+              . "/wiki/"
+              . uri_escape_utf8( $fields[4] ) . "_"
+              . uri_escape_utf8( $fields[5] );
+
+            # set UserAgent per API Policy
+            # http://www.mediawiki.org/wiki/API#Identifying_your_client
+            $ua->agent( $self->user_agent );
+
+            $w_content = get($w_url);
+
+            if ( defined($w_content) ) {
+                $messages[0] .=
+                  " (#wikipedia:" . get( $self->url_shortener . $w_url ) . ")";
+            }
+            else {
+                $self->log->warn( "Strange no Wikipedia Page? " . $w_url );
+
+            }
+
             $self->post2Twitter(
                 Result  => $result_ref,
                 Message => $messages[0]
@@ -542,9 +565,7 @@ sub writeRandomWikipediaTweet {
 
     # set UserAgent per API Policy
     # http://www.mediawiki.org/wiki/API#Identifying_your_client
-    $ua->agent(
-'EuropeanaBot (https://github.com/hatorikibble/twitter-europeanabot; at.peter.mayr@gmail.com)'
-    );
+    $ua->agent( $self->user_agent );
 
     while (1) {
         $i++;
