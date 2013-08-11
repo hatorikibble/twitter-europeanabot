@@ -579,7 +579,9 @@ sub writeRandomWikipediaTweet {
             "Result: " . $result_ref->{query}->{random}->[0]->{title} );
 
         if ( $title = $result_ref->{query}->{random}->[0]->{title} ) {
-
+            # test 
+            $title = decode( 'iso-latin-1', $title );
+            
             $result_ref = $self->getEuropeanaResults(
                 Query => "\"" . $title . "\"",
                 Field => 'title',
