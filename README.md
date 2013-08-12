@@ -52,7 +52,13 @@ Rename `logging.conf_example` to `logging.conf` and edit if necessary. Rename è
 
 * *nobel_file*
     CSV file with a list of Nobel Prize winners
+
+* *user_agent*
+    the Wikipedia API requires setting a user agent for requests
     
+* *wikipedia_base*
+    which Wikipedia version to use, defaults to `http://en.wikipedia.org`
+
 * *sleep_time*
     interval between searches
 
@@ -63,3 +69,5 @@ More Information
 * [Blogpost in German] (https://hatorikibble.wordpress.com/2013/07/19/ich-hab-da-mal-einen-osterreichischen-europeana-bot-geschrieben/)
 * [Blogpost in German about Version 1.1] (http://hatorikibble.wordpress.com/2013/07/22/der-europeanabot-mag-jetzt-auch-katzen/)
 * [Blogpost in German about Version 1.2] (http://hatorikibble.wordpress.com/2013/08/01/jede-menge-nobelpreise-fur-den-europeanabot/)
+* [Blogpost in German about Version 1.3] (http://hatorikibble.wordpress.com/2013/08/12/passen-gut-zusammen-europeanabot-und-wikipedia/)
+
