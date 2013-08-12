@@ -136,6 +136,7 @@ after start => sub {
         {
             $random = 102;
         }
+        $random = 66;
 
         switch ($random) {
             case [ 0 .. 4 ] { $self->writeHammerTimeTweet(); }
@@ -579,15 +580,14 @@ sub writeRandomWikipediaTweet {
             "Result: " . $result_ref->{query}->{random}->[0]->{title} );
 
         if ( $title = $result_ref->{query}->{random}->[0]->{title} ) {
-            # test 
-            $title = decode( 'iso-latin-1', $title );
-            
+
             $result_ref = $self->getEuropeanaResults(
                 Query => "\"" . $title . "\"",
                 Field => 'title',
                 Type  => 'IMAGE',
                 Rows  => 10
             );
+
             if ( $result_ref->{Status} eq 'OK' ) {
                 $self->log->info(
 "Needed $i tries to find a Result for a random Wikipedia Page!"
