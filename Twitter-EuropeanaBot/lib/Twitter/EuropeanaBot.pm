@@ -136,7 +136,6 @@ after start => sub {
         {
             $random = 102;
         }
-        $random = 66;
 
         switch ($random) {
             case [ 0 .. 4 ] { $self->writeHammerTimeTweet(); }
