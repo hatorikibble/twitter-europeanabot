@@ -44,7 +44,7 @@ use URI::Escape;
 
 use Data::Dumper;
 
-our $VERSION = '0.01';
+our $VERSION = '1.4';
 
 use Moose;
 with
@@ -52,8 +52,7 @@ with
 
 use Moose::Util::TypeConstraints;
 
-subtype 'File',
-  as 'Str',
+subtype 'File', as 'Str',
   where { -e $_ },
   message { "Cannot find any file at $_" };
 
@@ -68,9 +67,11 @@ has 'twitter_consumer_secret' => ( is => 'ro', isa => 'Str',  required => 1 );
 has 'twitter_access_token'    => ( is => 'ro', isa => 'Str',  required => 1 );
 has 'twitter_access_token_secret' =>
   ( is => 'ro', isa => 'Str', required => 1 );
-has 'url_shortener' => ( is => 'ro', isa => 'Str',  required => 1 );
-has 'location_file' => ( is => 'ro', isa => 'File', required => 1 );
-has 'nobel_file'    => ( is => 'ro', isa => 'File', required => 1 );
+has 'url_shortener'    => ( is => 'ro', isa => 'Str',  required => 1 );
+has 'location_file'    => ( is => 'ro', isa => 'File', required => 1 );
+has 'nobel_file'       => ( is => 'ro', isa => 'File', required => 1 );
+has 'guardian_api_key' => ( is => 'ro', isa => 'Str',  required => 1 );
+has 'guardian_api_url' => ( is => 'ro', isa => 'Str',  required => 1 );
 has 'user_agent' => ( is => 'ro', isa => 'Str', default => "EuropeanaBot" );
 has 'wikipedia_base' =>
   ( is => 'ro', isa => 'Str', default => "http://en.wikipedia.org" );
@@ -137,26 +138,38 @@ after start => sub {
             $random = 102;
         }
 
-        switch ($random) {
-            case [ 0 .. 4 ] { $self->writeHammerTimeTweet(); }
-            case [ 5 .. 9 ] {
-                $self->writeUnicornTweet();
+        # $random = 54;
+
+        eval {
+            switch ($random) {
+                case [ 0 .. 3 ] { $self->writeHammerTimeTweet(); }
+                case [ 4 .. 6 ] {
+                    $self->writeUnicornTweet();
+                }
+                case [ 7 .. 25 ]{ $self->writeLocationTweet(); }
+                case [ 26 .. 50 ]{ $self->writeNobelTweet(); }
+                case [ 51 .. 75 ] { $self->writeGuardianNewsTweet() };
+                case [ 76 .. 95 ] { $self->writeRandomWikipediaTweet(); }
+                case [ 96 .. 100 ]{ $self->writeCatTweet(); }
+
+                # special cases
+                case 101 { $self->writeMondayTweet(); }
+                case 102 { $self->writeFollowFridayTweet(); }
+
             }
-            case [ 10 .. 35 ]{ $self->writeLocationTweet(); }
-            case [ 36 .. 65 ]{ $self->writeNobelTweet(); }
-            case [ 66 .. 90 ] { $self->writeRandomWikipediaTweet(); }
-            case [ 91 .. 100 ]{ $self->writeCatTweet(); }
-
-            # special cases
-            case 101 { $self->writeMondayTweet(); }
-            case 102 { $self->writeFollowFridayTweet(); }
-
+        };
+        if ($@) {
+            $self->log->error( "Oh problem!: " . $@ );
         }
-        $self->log->debug(
-            "I'm going to sleep for " . $self->sleep_time . " seconds.." );
-        sleep( $self->sleep_time );
+        else {
+
+            $self->log->debug(
+                "I'm going to sleep for " . $self->sleep_time . " seconds.." );
+            sleep( $self->sleep_time );
+        }
 
     }
+
 };
 
 after status => sub {
@@ -510,7 +523,7 @@ sub writeNobelTweet {
 
             # is there a Wikipedia Page?
             $w_url =
-                $self->wikipedia_base 
+                $self->wikipedia_base
               . "/wiki/"
               . uri_escape_utf8( $fields[4] ) . "_"
               . uri_escape_utf8( $fields[5] );
@@ -609,6 +622,86 @@ sub writeRandomWikipediaTweet {
                 return;
             }
             sleep( 1 + int( rand(4) ) );    # sleep max 5 seconds
+
+        }
+
+    }
+}
+
+=head2 writeGuardianNewsTweet()
+
+posts a search result about a recent Guardian News Item
+
+=cut
+
+sub writeGuardianNewsTweet {
+    my $self        = shift;
+    my $result_ref  = undef;
+    my $json_result = undef;
+    my @results     = ();
+    my @tags        = ();
+    my $gurl        = undef;
+    my $i           = 0;
+    my $date        = undef;
+
+    $date = POSIX::strftime( "%Y-%m-%d", localtime );
+
+    my @messages = (
+"Hi! The \#guardian has a news item about _TITLE_: _GURL_ \#europeana has a picture: _URL_",
+"Oh! An article about _TITLE_  in the \#guardian: _GURL_  Here's the \#europeana picture: _URL_",
+"_TITLE_: \#guardian article: _GURL_  \#europeana picture: _URL_ You are welcome!"
+    );
+    @messages = shuffle @messages;
+
+    $self->log->debug("I'm gonna tweet about a Guardian News Item!");
+
+    $ua->agent( $self->user_agent );
+
+    while (1) {
+        $i++;
+
+        $json_result =
+          get(  $self->guardian_api_url
+              . "?from-date="
+              . $date
+              . "&to-date="
+              . $date
+              . "&page-size=10&format=json&show-tags=keyword&api-key="
+              . $self->guardian_api_key );
+        $result_ref = decode_json($json_result);
+        $self->log->debug( $result_ref->{response}->{total} . "results" );
+
+        @results = shuffle @{ $result_ref->{response}->{results} };
+
+        # get keywords for Europeana Search
+        @tags = shuffle @{ $results[0]->{tags} };
+
+        foreach my $tag (@tags) {
+
+            $result_ref = $self->getEuropeanaResults(
+                Query => "\"" . $tag->{webTitle} . "\"",
+                Field => 'title',
+                Type  => 'IMAGE',
+                Rows  => 10
+            );
+
+            if ( $result_ref->{Status} eq 'OK' ) {
+                $self->log->info(
+"Needed $i tries to find a Result for a random Wikipedia Page!"
+                );
+
+                # get shortened wikipedia URL
+                $gurl = get( $self->url_shortener . $results[0]->{webUrl} );
+
+                $messages[0] =~ s/_GURL_/$gurl/;
+
+                $self->post2Twitter(
+                    Result  => $result_ref,
+                    Message => $messages[0]
+                );
+
+                return;
+            }
 
         }
 
@@ -814,3 +907,5 @@ See http://dev.perl.org/licenses/ for more information.
 
 
 =cut
+
+## Please see file perltidy.ERR
