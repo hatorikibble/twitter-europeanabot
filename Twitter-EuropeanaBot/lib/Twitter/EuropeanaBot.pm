@@ -658,7 +658,6 @@ sub writeGuardianNewsTweet {
     $ua->agent( $self->user_agent );
 
     while (1) {
-        $i++;
 
         $json_result =
           get(  $self->guardian_api_url
@@ -677,7 +676,9 @@ sub writeGuardianNewsTweet {
         @tags = shuffle @{ $results[0]->{tags} };
 
         foreach my $tag (@tags) {
-
+            
+            $i++;
+             
             $result_ref = $self->getEuropeanaResults(
                 Query => "\"" . $tag->{webTitle} . "\"",
                 Field => 'title',
