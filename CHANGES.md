@@ -40,4 +40,9 @@ Version 1.3 "The Wikipedia edition"
 
 * Query Wikipedia's "Random Page" feature and search for corresponding Europeana Images
 
+Version 1.4 "The News Edition"
+------------------------------
+
+* Get recent news items via the [Guardian API](http://guardian.mashery.com) and use its keywords to search for corresponding Europeana images.
+
 
