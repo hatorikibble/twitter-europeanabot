@@ -142,13 +142,13 @@ after start => sub {
 
         eval {
             switch ($random) {
-                case [ 0 .. 3 ] { $self->writeHammerTimeTweet(); }
-                case [ 4 .. 6 ] {
+                case [ 0 .. 2 ] { $self->writeHammerTimeTweet(); }
+                case [ 3 .. 5 ] {
                     $self->writeUnicornTweet();
                 }
-                case [ 7 .. 25 ]{ $self->writeLocationTweet(); }
-                case [ 26 .. 50 ]{ $self->writeNobelTweet(); }
-                case [ 51 .. 75 ] { $self->writeGuardianNewsTweet() };
+                case [ 6 .. 25 ]{ $self->writeLocationTweet(); }
+                case [ 26 .. 45 ]{ $self->writeNobelTweet(); }
+                case [ 46 .. 75 ] { $self->writeGuardianNewsTweet() };
                 case [ 76 .. 95 ] { $self->writeRandomWikipediaTweet(); }
                 case [ 96 .. 100 ]{ $self->writeCatTweet(); }
 
@@ -636,6 +636,7 @@ posts a search result about a recent Guardian News Item
 
 sub writeGuardianNewsTweet {
     my $self        = shift;
+    my $request     = undef;
     my $result_ref  = undef;
     my $json_result = undef;
     my @results     = ();
@@ -659,54 +660,76 @@ sub writeGuardianNewsTweet {
 
     while (1) {
 
-        $json_result =
-          get(  $self->guardian_api_url
-              . "?from-date="
-              . $date
-              . "&to-date="
-              . $date
-              . "&page-size=10&format=json&show-tags=keyword&api-key="
-              . $self->guardian_api_key );
-        $result_ref = decode_json($json_result);
-        $self->log->debug( $result_ref->{response}->{total} . "results" );
+        $request =
+            $self->guardian_api_url
+          . "?from-date="
+          . $date
+          . "&to-date="
+          . $date
+          . "&page-size=10&format=json&show-tags=keyword&api-key="
+          . $self->guardian_api_key;
 
-        @results = shuffle @{ $result_ref->{response}->{results} };
+        $json_result = get($request);
+        $result_ref  = decode_json($json_result);
 
-        # get keywords for Europeana Search
-        @tags = shuffle @{ $results[0]->{tags} };
+        if (
+            (
+                defined($result_ref)
+                && ( defined( $result_ref->{response}->{total} ) )
+            )
+            && ( $result_ref->{response}->{total} > 0 )
+          )
+        {
 
-        foreach my $tag (@tags) {
-            
-            $i++;
-             
-            $result_ref = $self->getEuropeanaResults(
-                Query => "\"" . $tag->{webTitle} . "\"",
-                Field => 'title',
-                Type  => 'IMAGE',
-                Rows  => 10
-            );
+            $self->log->debug( $result_ref->{response}->{total} . " results" );
 
-            if ( $result_ref->{Status} eq 'OK' ) {
-                $self->log->info(
-"Needed $i tries to find a Result for a random Wikipedia Page!"
+            @results = shuffle @{ $result_ref->{response}->{results} };
+
+            # get keywords for Europeana Search
+            @tags = shuffle @{ $results[0]->{tags} };
+
+            foreach my $tag (@tags) {
+
+                $i++;
+
+                $result_ref = $self->getEuropeanaResults(
+                    Query => "\"" . $tag->{webTitle} . "\"",
+                    Field => 'title',
+                    Type  => 'IMAGE',
+                    Rows  => 10
                 );
 
-                # get shortened wikipedia URL
-                $gurl = get( $self->url_shortener . $results[0]->{webUrl} );
+                if ( $result_ref->{Status} eq 'OK' ) {
+                    $self->log->info(
+"Needed $i tries to find a Result for a Guardian news tag!"
+                    );
 
-                $messages[0] =~ s/_GURL_/$gurl/;
+                    # get shortened wikipedia URL
+                    $gurl = get( $self->url_shortener . $results[0]->{webUrl} );
 
-                $self->post2Twitter(
-                    Result  => $result_ref,
-                    Message => $messages[0]
-                );
+                    $messages[0] =~ s/_GURL_/$gurl/;
 
-                return;
+                    $self->post2Twitter(
+                        Result  => $result_ref,
+                        Message => $messages[0]
+                    );
+
+                    return;
+                }
+
             }
+
+        }
+        else {
+            $self->log->error( "Problem with request: " . $request );
+
+            $self->log->error("Activating Fallback-Cat!");
+            $self->writeCatTweet();
 
         }
 
     }
+
 }
 
 =head2 writeCatTweet()
