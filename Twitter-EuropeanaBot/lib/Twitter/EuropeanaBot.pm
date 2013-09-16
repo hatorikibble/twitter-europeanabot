@@ -725,6 +725,7 @@ sub writeGuardianNewsTweet {
 
             $self->log->error("Activating Fallback-Cat!");
             $self->writeCatTweet();
+            return;
 
         }
 
