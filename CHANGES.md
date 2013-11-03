@@ -45,4 +45,8 @@ Version 1.4 "The News Edition"
 
 * Get recent news items via the [Guardian API](http://guardian.mashery.com) and use its keywords to search for corresponding Europeana images.
 
+Version 1.5 "The Nostalgic Edition"
+-----------------------------------
+
+* Use the date search to find out, what happened on this day 10, 20, 20, 50 or 100 years ago
 
