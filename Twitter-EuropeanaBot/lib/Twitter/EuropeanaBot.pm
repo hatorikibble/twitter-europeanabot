@@ -139,7 +139,7 @@ after start => sub {
             $random = 102;
         }
 
-        # $random = 103;
+        # $random = 67;
 
         eval {
             switch ($random) {
@@ -765,10 +765,10 @@ sub writeAnniversaryTweet {
         ( $y, $m, $d ) = Add_Delta_YMD( Today(), -$year, 0, 0 );
 
         $result_ref = $self->getEuropeanaResults(
-            Query => "\""
-              . sprintf( '%02d', $d ) . "."
+            Query => 
+               sprintf( '%02d', $d ) . "."
               . sprintf( '%02d', $m ) . "."
-              . $y . "\"",
+              . $y ,
             Field => 'when',
             Type  => 'IMAGE',
             Rows  => 10
