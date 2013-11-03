@@ -16,6 +16,7 @@ WriteMakefile(
     PREREQ_PM => {
         'Test::More'            => 0,
         'Config::Any::JSON'     => 0,
+        'Date::Calc'            => 0,
        # 'DBD::SQLite'           => 0,
         'File::Slurp'           => 1,
         'JSON'                  => '2.59',

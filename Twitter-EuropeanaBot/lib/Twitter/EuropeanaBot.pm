@@ -32,6 +32,7 @@ use namespace::autoclean;
 use FindBin qw($Bin);
 use Log::Log4perl qw( :levels);
 
+use Date::Calc qw(Today Add_Delta_YMD);
 use Encode;
 use File::Slurp;
 use JSON;
@@ -138,7 +139,7 @@ after start => sub {
             $random = 102;
         }
 
-        # $random = 54;
+        # $random = 103;
 
         eval {
             switch ($random) {
@@ -148,7 +149,8 @@ after start => sub {
                 }
                 case [ 6 .. 25 ]{ $self->writeLocationTweet(); }
                 case [ 26 .. 45 ]{ $self->writeNobelTweet(); }
-                case [ 46 .. 75 ] { $self->writeGuardianNewsTweet() };
+                case [ 46 .. 65 ] { $self->writeGuardianNewsTweet() };
+                case [ 66 .. 75 ] { $self->writeAnniversaryTweet(); }
                 case [ 76 .. 95 ] { $self->writeRandomWikipediaTweet(); }
                 case [ 96 .. 100 ]{ $self->writeCatTweet(); }
 
@@ -728,6 +730,64 @@ sub writeGuardianNewsTweet {
             return;
 
         }
+
+    }
+
+}
+
+=head2 writeAnniversaryTweet()
+
+posts a search result to a date in history
+
+=cut
+
+sub writeAnniversaryTweet {
+    my $self       = shift;
+    my $i          = 0;
+    my $result_ref = undef;
+    my @years      = ( 10, 20, 30, 50, 100 );
+    my $y          = undef;
+    my $m          = undef;
+    my $d          = undef;
+    my @messages   = (
+"So what happened on this day _YEARS_ years ago? _TITLE_ \#europeana show me a picture! _URL_",
+"Uff, I don't remember what happened _YEARS_ years ago. But #europeana does: _TITLE_ _URL_ ",
+"On this day in history _YEARS_ years ago: _TITLE_ #europeana your turn: _URL_"
+    );
+    @messages = shuffle @messages;
+    @years    = shuffle @years;
+
+    $self->log->debug("I'm gonna tweet about what happenend years ago!");
+
+    foreach my $year (@years) {
+
+        $i++;
+        ( $y, $m, $d ) = Add_Delta_YMD( Today(), -$year, 0, 0 );
+
+        $result_ref = $self->getEuropeanaResults(
+            Query => "\""
+              . sprintf( '%02d', $d ) . "."
+              . sprintf( '%02d', $m ) . "."
+              . $y . "\"",
+            Field => 'when',
+            Type  => 'IMAGE',
+            Rows  => 10
+        );
+
+        if ( $result_ref->{Status} eq 'OK' ) {
+            $self->log->info(
+                "Needed $i tries to find a Result for a specific date!" );
+
+            $messages[0] =~ s/_YEARS_/$year/;
+
+            $self->post2Twitter(
+                Result  => $result_ref,
+                Message => $messages[0]
+            );
+
+            return;
+        }
+        sleep( 1 + int( rand(4) ) );    # sleep max 5 seconds
 
     }
 
