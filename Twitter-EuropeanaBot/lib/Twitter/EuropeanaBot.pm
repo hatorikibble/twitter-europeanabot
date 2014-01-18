@@ -48,6 +48,7 @@ use Data::Dumper;
 our $VERSION = '1.4.1';
 
 use Moose;
+
 with
   qw( MooseX::Getopt MooseX::Log::Log4perl MooseX::Daemonize MooseX::Runnable   );
 
@@ -435,7 +436,7 @@ sub post2Twitter {
                 $self->logger->error( "Error posting to "
                       . $self->twitter_account . ": "
                       . $@
-                      . "!".Dumper($nt_result) );
+                      . "!" );
 
             }
         }
