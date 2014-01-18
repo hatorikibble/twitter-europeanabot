@@ -6,7 +6,7 @@ Twitter::EuropeanaBot - The great new Twitter::EuropeanaBot!
 
 =head1 VERSION
 
-Version 0.01
+Version 1.4.1
 
 =cut
 
@@ -45,7 +45,7 @@ use URI::Escape;
 
 use Data::Dumper;
 
-our $VERSION = '1.4';
+our $VERSION = '1.4.1';
 
 use Moose;
 with
@@ -198,6 +198,7 @@ sub createTwitterObject {
         consumer_secret     => $self->twitter_consumer_secret,
         access_token        => $self->twitter_access_token,
         access_token_secret => $self->twitter_access_token_secret,
+        ssl                 => 1,
     ) || $self->log->logdie("Could not create Twitter-Object: $!");
 
     $self->{Twitter} = $Twitter;
@@ -434,7 +435,7 @@ sub post2Twitter {
                 $self->logger->error( "Error posting to "
                       . $self->twitter_account . ": "
                       . $@
-                      . "!" );
+                      . "!".Dumper($nt_result) );
 
             }
         }

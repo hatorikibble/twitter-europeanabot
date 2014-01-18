@@ -27,7 +27,7 @@ WriteMakefile(
         'MooseX::Getopt'        => 0,
         'MooseX::Log::Log4perl' => 0,
         'MooseX::Runnable'      => 0,
-        'Net::Twitter'          => '4.0',
+        'Net::Twitter'          => '4.01002',
         'Switch'                => 0,
         'URI::Escape'           => 0,
     },
