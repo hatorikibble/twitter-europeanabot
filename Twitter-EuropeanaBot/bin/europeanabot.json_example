@@ -14,7 +14,9 @@
  "nobel_file": "/tmp/prize.csv",
  "wikipedia_base": "http://en.wikipedia.org",
  "guardian_api_key": "XXX",
- "guardian_api_url": "http://content.guardianapis.com/search", 
+ "guardian_api_url": "http://content.guardianapis.com/search",
+ "wordnik_api_key": "XXX",
+ "wordnik_api_url": "http://api.wordnik.com:80/v4/",
  "user_agent": "EuropeanaBot (https://github.com/hatorikibble/twitter-europeanabot)",
  "sleep_time": 1000
 }

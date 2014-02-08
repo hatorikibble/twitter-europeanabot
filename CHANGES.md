@@ -48,5 +48,13 @@ Version 1.4 "The News Edition"
 Version 1.5 "The Nostalgic Edition"
 -----------------------------------
 
-* Use the date search to find out, what happened on this day 10, 20, 20, 50 or 100 years ago
+* Use the date search to find out, what happened on this day 10, 20,
+  20, 50 or 100 years ago
 
+Version 1.6 "The Eloquent Edition"
+-----------------------------------
+
+* Everyday 11 o'clock is vocabulary learning time! The Bot uses the
+  [Wordnik API](http://developer.wordnik.com) to find their "Word of the day" and searches for a
+  corresponding Europeana item. If nothing is found, it falls back to
+  a cat tweet.

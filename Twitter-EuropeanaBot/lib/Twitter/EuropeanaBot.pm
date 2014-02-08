@@ -6,7 +6,7 @@ Twitter::EuropeanaBot - The great new Twitter::EuropeanaBot!
 
 =head1 VERSION
 
-Version 1.4.1
+Version 1.6
 
 =cut
 
@@ -45,7 +45,7 @@ use URI::Escape;
 
 use Data::Dumper;
 
-our $VERSION = '1.4.1';
+our $VERSION = '1.6';
 
 use Moose;
 
@@ -74,6 +74,8 @@ has 'location_file'    => ( is => 'ro', isa => 'File', required => 1 );
 has 'nobel_file'       => ( is => 'ro', isa => 'File', required => 1 );
 has 'guardian_api_key' => ( is => 'ro', isa => 'Str',  required => 1 );
 has 'guardian_api_url' => ( is => 'ro', isa => 'Str',  required => 1 );
+has 'wordnik_api_key'  => ( is => 'ro', isa => 'Str',  required => 1 );
+has 'wordnik_api_url'  => ( is => 'ro', isa => 'Str',  required => 1 );
 has 'user_agent' => ( is => 'ro', isa => 'Str', default => "EuropeanaBot" );
 has 'wikipedia_base' =>
   ( is => 'ro', isa => 'Str', default => "http://en.wikipedia.org" );
@@ -140,7 +142,13 @@ after start => sub {
             $random = 102;
         }
 
-        # $random = 67;
+        # Everyday 11 o'clock is vocab time!
+        if ( POSIX::strftime( "%H", localtime() ) eq '13' )
+        {
+            $random = 103;
+        }
+
+        # $random = 103;
 
         eval {
             switch ($random) {
@@ -158,6 +166,7 @@ after start => sub {
                 # special cases
                 case 101 { $self->writeMondayTweet(); }
                 case 102 { $self->writeFollowFridayTweet(); }
+                case 103 { $self->writeWordnikWordOfTheDayTweet(); }
 
             }
         };
@@ -737,6 +746,76 @@ sub writeGuardianNewsTweet {
 
 }
 
+=head2 writeWordnikWordOfTheDayTweet()
+
+posts a search result about Wordnik's "Word Of The Day"
+
+=cut
+
+sub writeWordnikWordOfTheDayTweet {
+    my $self        = shift;
+    my $request     = undef;
+    my $result_ref  = undef;
+    my $json_result = undef;
+
+    my @messages = (
+"Oh! Word of the day on #wordnik is _TITLE_: \#europeana has a picture: _URL_",
+"#wordnik says 'Word of the day' is: _TITLE_ Here's the \#europeana picture: _URL_",
+    );
+    @messages = shuffle @messages;
+
+    $self->log->debug("I'm gonna tweet about a Word of the day");
+
+    $ua->agent( $self->user_agent );
+
+    $request =
+        $self->wordnik_api_url
+      . "words.json/wordOfTheDay?api_key="
+      . $self->wordnik_api_key;
+
+    $json_result = get($request);
+    $result_ref  = decode_json($json_result);
+
+    if ( defined($result_ref)
+        && ( defined( $result_ref->{word} ) ) )
+
+    {
+
+        $self->log->debug( "Result is: " . $result_ref->{word} );
+
+        $result_ref = $self->getEuropeanaResults(
+            Query => "\"" . $result_ref->{word} . "\"",
+            Field => 'title',
+            Type  => 'IMAGE',
+            Rows  => 10
+        );
+
+        if ( $result_ref->{Status} eq 'OK' ) {
+
+            $self->post2Twitter(
+                Result  => $result_ref,
+                Message => $messages[0]
+            );
+
+            return;
+        }
+        else {
+            $self->log->error("Activating Fallback-Cat!");
+            $self->writeCatTweet();
+        }
+
+    }
+    else {
+        $self->log->error( "Problem with request: " . $request );
+
+        $self->log->error("Activating Fallback-Cat!");
+        $self->writeCatTweet();
+        return;
+
+    }
+
+}
+
 =head2 writeAnniversaryTweet()
 
 posts a search result to a date in history
@@ -767,10 +846,9 @@ sub writeAnniversaryTweet {
         ( $y, $m, $d ) = Add_Delta_YMD( Today(), -$year, 0, 0 );
 
         $result_ref = $self->getEuropeanaResults(
-            Query => 
-               sprintf( '%02d', $d ) . "."
+            Query => sprintf( '%02d', $d ) . "."
               . sprintf( '%02d', $m ) . "."
-              . $y ,
+              . $y,
             Field => 'when',
             Type  => 'IMAGE',
             Rows  => 10
@@ -778,7 +856,7 @@ sub writeAnniversaryTweet {
 
         if ( $result_ref->{Status} eq 'OK' ) {
             $self->log->info(
-                "Needed $i tries to find a Result for a specific date!" );
+                "Needed $i tries to find a Result for a specific date!");
 
             $messages[0] =~ s/_YEARS_/$year/;
 
