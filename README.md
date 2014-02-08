@@ -71,3 +71,5 @@ More Information
 * [Blogpost in German about Version 1.2] (http://hatorikibble.wordpress.com/2013/08/01/jede-menge-nobelpreise-fur-den-europeanabot/)
 * [Blogpost in German about Version 1.3] (http://hatorikibble.wordpress.com/2013/08/12/passen-gut-zusammen-europeanabot-und-wikipedia/)
 * [Blogpost in German about Version 1.4] (http://hatorikibble.wordpress.com/2013/09/16/der-europeanabot-liest-jetzt-auch-den-guardian/)
+* [Blogpost in German about Version 1.5] (https://hatorikibble.wordpress.com/2013/11/03/der-europeanabot-schaut-zuruck/)
+* [Blogpost in German about Version 1.6] (https://hatorikibble.wordpress.com/2014/02/08/der-europeanabot-lernt-vokabeln/)
