@@ -66,4 +66,4 @@ Version 1.7 "The European Edition"
   [European capitals|http://opengeocode.org/download/cow.php] to
   present some images
 
-* minor tweak: Guardian keywords are not [Hashtags|http://en.wikipedia.org/wiki/Hashtag]
+* minor tweak: Guardian keywords are now [Hashtags|http://en.wikipedia.org/wiki/Hashtag]
