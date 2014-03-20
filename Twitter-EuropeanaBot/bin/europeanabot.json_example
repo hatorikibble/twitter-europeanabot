@@ -12,6 +12,7 @@
  "url_shortener" : "http://is.gd/api.php?logstats=1&longurl=",
  "location_file" : "/tmp/location.csv",
  "nobel_file": "/tmp/prize.csv",
+ "capitals_file": "/tmp/eu_capitals.csv", 
  "wikipedia_base": "http://en.wikipedia.org",
  "guardian_api_key": "XXX",
  "guardian_api_url": "http://content.guardianapis.com/search",

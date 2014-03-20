@@ -6,7 +6,7 @@ Twitter::EuropeanaBot - The great new Twitter::EuropeanaBot!
 
 =head1 VERSION
 
-Version 1.6
+Version 1.7
 
 =cut
 
@@ -41,11 +41,12 @@ use LWP::Simple qw(get $ua);
 use Net::Twitter;
 use POSIX;
 use Switch;
+use Text::xSV;
 use URI::Escape;
 
 use Data::Dumper;
 
-our $VERSION = '1.6';
+our $VERSION = '1.7';
 
 use Moose;
 
@@ -72,6 +73,7 @@ has 'twitter_access_token_secret' =>
 has 'url_shortener'    => ( is => 'ro', isa => 'Str',  required => 1 );
 has 'location_file'    => ( is => 'ro', isa => 'File', required => 1 );
 has 'nobel_file'       => ( is => 'ro', isa => 'File', required => 1 );
+has 'capitals_file'    => ( is => 'ro', isa => 'File', required => 1 );
 has 'guardian_api_key' => ( is => 'ro', isa => 'Str',  required => 1 );
 has 'guardian_api_url' => ( is => 'ro', isa => 'Str',  required => 1 );
 has 'wordnik_api_key'  => ( is => 'ro', isa => 'Str',  required => 1 );
@@ -117,6 +119,8 @@ after start => sub {
 
     $self->createNobelSeeds();
 
+    $self->createCapitalsSeeds();
+
     while (1) {
 
         # what shall we do? let's roll the dice?
@@ -143,12 +147,11 @@ after start => sub {
         }
 
         # Everyday 11 o'clock is vocab time!
-        if ( POSIX::strftime( "%H", localtime() ) eq '13' )
-        {
+        if ( POSIX::strftime( "%H", localtime() ) eq '13' ) {
             $random = 103;
         }
 
-        # $random = 103;
+        # $random = 46;
 
         eval {
             switch ($random) {
@@ -157,7 +160,8 @@ after start => sub {
                     $self->writeUnicornTweet();
                 }
                 case [ 6 .. 25 ]{ $self->writeLocationTweet(); }
-                case [ 26 .. 45 ]{ $self->writeNobelTweet(); }
+                case [ 26 .. 35 ]{ $self->writeNobelTweet(); }
+                case [ 36 .. 45 ]{ $self->writeCapitalsTweet(); }
                 case [ 46 .. 65 ] { $self->writeGuardianNewsTweet() };
                 case [ 66 .. 75 ] { $self->writeAnniversaryTweet(); }
                 case [ 76 .. 95 ] { $self->writeRandomWikipediaTweet(); }
@@ -299,6 +303,63 @@ sub createNobelSeeds {
         $self->log->debug( scalar(@lines) . " searchterms generated" );
         $self->{NobelSeeds} = \@lines;
     }
+
+} ## end sub createSeed
+
+=head2 createCapitalsSeeds()
+
+reads the contents of C<$self->capitals_file> 
+and creates C<$self->{CapitalsSeeds}>
+
+=cut
+
+sub createCapitalsSeeds {
+    my $self  = shift;
+    my $Csv   = new Text::xSV( sep => ";" );
+    my @seeds = ();
+
+    $self->log->debug( "Creating seeds from file: " . $self->capitals_file );
+
+    # source and metadata_ref at http://opengeocode.org/download/cow.php
+    $Csv->open_file( $self->capitals_file );
+    $Csv->read_header();
+
+    while ( $Csv->get_row() ) {
+        my $country = undef;
+
+        (
+            $country->{name_en},
+            $country->{capital_en},
+            $country->{capital_local}
+        ) = $Csv->extract(qw(ISOen_name UNen_capital UNGEGNlc_capital ));
+
+        # trim spaces
+        foreach my $k ( keys %{$country} ) {
+            $country->{$k} =~ s/^\s+//g;
+        }
+
+        # be lazy, just ignore faulty entries..
+        next
+          unless ( ( length( $country->{name_en} ) > 0 )
+            && ( length( $country->{capital_en} ) > 0 )
+            && ( length( $country->{capital_local} ) > 0 ) );
+
+        # deal with multi-language entries, take the first
+        if ( $country->{capital_local} =~ /^(.*?)(\[|\()..(\]|\))\// ) {
+            $country->{capital_local} = $1;
+        }
+
+        # shorten country names
+        if ( $country->{name_en} =~ /^(.*?), / ) {
+            $country->{name_en} = $1;
+        }
+
+        push( @seeds, $country );
+
+    }
+
+    $self->log->debug( scalar(@seeds) . " searchterms generated" );
+    $self->{CapitalsSeeds} = \@seeds;
 
 } ## end sub createSeed
 
@@ -566,6 +627,74 @@ sub writeNobelTweet {
     }
 }
 
+=head2 writeCapitalsTweet()
+
+posts a search result from the list or European capitals
+
+=cut
+
+sub writeCapitalsTweet {
+    my $self       = shift;
+    my $result_ref = undef;
+    my $w_url      = undef;
+    my $w_content  = undef;
+    my @seeds      = shuffle @{ $self->{CapitalsSeeds} };
+    my @messages   = (
+"Hi! Did you know _TITLE_ is the capital of _COUNTRY_ \#europeana has a picture from _YEAR_: _URL_",
+"Have you ever been to _TITLE_ in _COUNTRY_? Check out \#europeana: _URL_",
+        "Look! A \#europeana image of _TITLE_ at _YEAR_: _URL_",
+"Hi! You think you know _TITLE_? Check out this \#europeana image from _YEAR_! _URL_"
+    );
+    @messages = shuffle @messages;
+
+    $self->log->debug("I'm gonna tweet about a european capital!");
+
+    foreach my $item (@seeds) {
+        $self->log->debug( $item->{capital_local} );
+        $result_ref = $self->getEuropeanaResults(
+            Query => "\"" . $item->{capital_local} . "\"",
+            Field => 'title',
+            Type  => 'IMAGE',
+            Rows  => 5
+        );
+        $self->log->debug( $item->{capital_local} );
+        if ( $result_ref->{Status} eq 'OK' ) {
+            $item->{capital_en} =~ s/\s/_/g;
+
+            # is there a Wikipedia Page?
+            $w_url =
+                $self->wikipedia_base
+              . "/wiki/"
+              . uri_escape_utf8( $item->{capital_en} );
+
+            # set UserAgent per API Policy
+            # http://www.mediawiki.org/wiki/API#Identifying_your_client
+            $ua->agent( $self->user_agent );
+
+            $w_content = get($w_url);
+
+            if ( defined($w_content) ) {
+                $messages[0] .=
+                  " (#wikipedia:" . get( $self->url_shortener . $w_url ) . ")";
+            }
+            else {
+                $self->log->warn( "Strange no Wikipedia Page? " . $w_url );
+
+            }
+
+            $messages[0] =~ s/_COUNTRY_/$item->{name_en}/;
+
+            $self->post2Twitter(
+                Result  => $result_ref,
+                Message => $messages[0]
+            );
+
+            return;
+        }
+    }
+
+}
+
 =head2 writeRandomWikipediaTweet()
 
 posts a search result to a random Wikipedia page
@@ -717,10 +846,15 @@ sub writeGuardianNewsTweet {
 "Needed $i tries to find a Result for a Guardian news tag!"
                     );
 
-                    # get shortened wikipedia URL
+                    # get shortened Guardian URL
                     $gurl = get( $self->url_shortener . $results[0]->{webUrl} );
 
                     $messages[0] =~ s/_GURL_/$gurl/;
+
+                    # create a Hashtag if keyword is just one word
+                    unless ( $result_ref->{Query} =~ /\s/ ) {
+                        $result_ref->{Query} =~ s/^"/"\#/;
+                    }
 
                     $self->post2Twitter(
                         Result  => $result_ref,

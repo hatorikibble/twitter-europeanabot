@@ -28,6 +28,7 @@ WriteMakefile(
         'MooseX::Log::Log4perl' => 0,
         'MooseX::Runnable'      => 0,
         'Net::Twitter'          => '4.01002',
+        'Text::xSV'             => '0.21',
         'Switch'                => 0,
         'URI::Escape'           => 0,
     },
