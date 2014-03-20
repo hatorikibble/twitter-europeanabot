@@ -58,3 +58,12 @@ Version 1.6 "The Eloquent Edition"
   [Wordnik API](http://developer.wordnik.com) to find their "Word of the day" and searches for a
   corresponding Europeana item. If nothing is found, it falls back to
   a cat tweet.
+
+Version 1.7 "The European Edition"
+-----------------------------------
+
+* The bot now uses a list or
+  [European capitals|http://opengeocode.org/download/cow.php] to
+  present some images
+
+* minor tweak: Guardian keywords are not [Hashtags|http://en.wikipedia.org/wiki/Hashtag]
