@@ -472,7 +472,8 @@ sub post2Twitter {
 
         @items = shuffle @items;
 
-        $short_url = get( $self->url_shortener . $items[0]->{guid} );
+        $short_url =
+          get( $self->url_shortener . uri_escape_utf8( $items[0]->{guid} ) );
 
         $status =~ s/_TITLE_/$p{Result}->{Query}/;
         $status =~ s/_URL_/$short_url/;
