@@ -6,7 +6,7 @@ Twitter::EuropeanaBot - The great new Twitter::EuropeanaBot!
 
 =head1 VERSION
 
-Version 1.7
+Version 1.7.1
 
 =cut
 
@@ -475,7 +475,14 @@ sub post2Twitter {
         $short_url =
           get( $self->url_shortener . uri_escape_utf8( $items[0]->{guid} ) );
 
-        $status =~ s/_TITLE_/$p{Result}->{Query}/;
+        $p{Result}->{Query} =~s/"//g; #" Formatting
+        
+        # if term ist just one word and no date , add hashtag
+        unless ( $p{Result}->{Query} =~ /(\s|\.)/ ) {
+            $p{Result}->{Query} = "\#" . $p{Result}->{Query};
+        }
+
+        $status =~ s/_TITLE_/"$p{Result}->{Query}"/g;
         $status =~ s/_URL_/$short_url/;
 
         if ( defined( $items[0]->{year}->[0] ) ) {
@@ -545,6 +552,7 @@ sub writeLocationTweet {
             Type  => 'IMAGE',
             Rows  => 10
         );
+
         if ( $result_ref->{Status} eq 'OK' ) {
             $self->post2Twitter(
                 Result  => $result_ref,
@@ -641,8 +649,8 @@ sub writeCapitalsTweet {
     my $w_content  = undef;
     my @seeds      = shuffle @{ $self->{CapitalsSeeds} };
     my @messages   = (
-"Hi! Did you know _TITLE_ is the capital of _COUNTRY_ \#europeana has a picture from _YEAR_: _URL_",
-"Have you ever been to _TITLE_ in _COUNTRY_? Check out \#europeana: _URL_",
+"Did you know _TITLE_ is the capital of _COUNTRY_ \#europeana has a picture from _YEAR_: _URL_",
+"Have you ever been to _TITLE_ in \#_COUNTRY_? Check out \#europeana: _URL_",
         "Look! A \#europeana image of _TITLE_ at _YEAR_: _URL_",
 "Hi! You think you know _TITLE_? Check out this \#europeana image from _YEAR_! _URL_"
     );
@@ -852,11 +860,6 @@ sub writeGuardianNewsTweet {
 
                     $messages[0] =~ s/_GURL_/$gurl/;
 
-                    # create a Hashtag if keyword is just one word
-                    unless ( $result_ref->{Query} =~ /\s/ ) {
-                        $result_ref->{Query} =~ s/^"/"\#/;
-                    }
-
                     $self->post2Twitter(
                         Result  => $result_ref,
                         Message => $messages[0]
@@ -1052,7 +1055,7 @@ sub writeHammerTimeTweet {
     my $self       = shift;
     my $result_ref = undef;
     my @seeds      = @{ $self->{LocationSeeds} };
-    my $message    = "Stop! Hammertime! _URL_";
+    my $message    = "Stop! \#Hammertime! _URL_";
 
     $self->log->debug("Oh.. It's Hammertime!");
 
