@@ -6,7 +6,7 @@ Twitter::EuropeanaBot - The great new Twitter::EuropeanaBot!
 
 =head1 VERSION
 
-Version 1.7.1
+Version 1.7.2
 
 =cut
 
@@ -46,7 +46,7 @@ use URI::Escape;
 
 use Data::Dumper;
 
-our $VERSION = '1.7';
+our $VERSION = '1.7.2';
 
 use Moose;
 
@@ -419,7 +419,7 @@ sub getEuropeanaResults {
     $self->log->debug( "QueryString is: " . $query_string );
     if ( $json_result = get $query_string) {
         $result_ref = decode_json($json_result);
-        $self->log->debug( "Result: " . Dumper( $result_ref->{itemsCount} ) );
+        $self->log->debug( "Result: " . $result_ref->{itemsCount} ." items" );
         if ( $result_ref->{itemsCount} > 0 ) {
 
             # custom enrichment
@@ -437,7 +437,44 @@ sub getEuropeanaResults {
 
 }
 
-=head2 post2Twitter(Message=>'So.. you like cats? Here's a picture from #europeana: _URL_', Result=>$result)
+=head2 shortenUrl(Url=>'http://longurl.com')
+
+returns a shortened URL, or - if anything goes wrong -
+the original one
+
+=cut
+
+sub shortenUrl {
+    my ( $self, %p ) = @_;
+    my $short_url;
+
+    eval {
+        $short_url = get( $self->url_shortener . uri_escape_utf8( $p{Url} ) );
+    };
+
+    if ($@) {
+        $self->logger->error(
+            "Problem shortening URL: " . $p{Url} . " : " . $@ . "!" );
+        return $p{Url};
+
+    }
+    elsif ( defined($short_url) && ( $short_url =~ /^http/ ) ) {
+        $self->logger->debug( "URL " . $p{Url} . " became " . $short_url );
+        return $short_url;
+    }
+    else {    # Fallback
+        $self->logger->error( "Shortend Url"
+              . $short_url
+              . " looks weird, falling back to "
+              . $p{Url} );
+        return $p{Url}
+
+    }
+}
+
+=head2 post2Twitter(
+          Message => 'So.. you like cats? Here's a picture from #europeana
+        : _URL_ ', Result=>$result)
 
 posts the result to the twitter account specified by C<$self->twitter_account>
 
@@ -472,11 +509,10 @@ sub post2Twitter {
 
         @items = shuffle @items;
 
-        $short_url =
-          get( $self->url_shortener . uri_escape_utf8( $items[0]->{guid} ) );
+        $short_url = $self->shortenUrl( Url => $items[0]->{guid} );
 
-        $p{Result}->{Query} =~s/"//g; #" Formatting
-        
+        $p{Result}->{Query} =~ s/"//g;    #" Formatting
+
         # if term ist just one word and no date , add hashtag
         unless ( $p{Result}->{Query} =~ /(\s|\.)/ ) {
             $p{Result}->{Query} = "\#" . $p{Result}->{Query};
@@ -495,7 +531,7 @@ sub post2Twitter {
         }
     }
 
-    $status = decode( 'utf8', $status );
+    $status = decode( ' utf8 ', $status );
     $self->log->info(
         "Posting Status: " . $status . " (" . length($status) . ")" );
 
@@ -504,10 +540,11 @@ sub post2Twitter {
     }
     else {
 
-        if ( length($status) > 140 ) {
-            $self->log->warn("Status is too long!");
-        }
-        else {
+        ###### no length check for now.. #####
+        #if ( length($status) > 140 ) {
+        #    $self->log->warn("Status is too long!");
+        #}
+        #else {
 
             eval { $nt_result = $self->{Twitter}->update($status); };
             if ($@) {
@@ -517,7 +554,7 @@ sub post2Twitter {
                       . "!" );
 
             }
-        }
+        #}
 
         # $self->log->debug( Dumper($nt_result) );
     }
@@ -619,7 +656,7 @@ sub writeNobelTweet {
 
             if ( defined($w_content) ) {
                 $messages[0] .=
-                  " (#wikipedia:" . get( $self->url_shortener . $w_url ) . ")";
+                  " (#wikipedia:" . $self->shortenUrl( Url => $w_url ) . ")";
             }
             else {
                 $self->log->warn( "Strange no Wikipedia Page? " . $w_url );
@@ -684,7 +721,7 @@ sub writeCapitalsTweet {
 
             if ( defined($w_content) ) {
                 $messages[0] .=
-                  " (#wikipedia:" . get( $self->url_shortener . $w_url ) . ")";
+                  " (#wikipedia:" . $self->shortenUrl( Url => $w_url ) . ")";
             }
             else {
                 $self->log->warn( "Strange no Wikipedia Page? " . $w_url );
@@ -758,8 +795,7 @@ sub writeRandomWikipediaTweet {
 
                 # get shortened wikipedia URL
                 $wurl =
-                  get(  $self->url_shortener
-                      . $self->wikipedia_base
+                  $self->shortenUrl( Url => $self->wikipedia_base
                       . "/wiki/"
                       . uri_escape($title) );
 
@@ -856,7 +892,7 @@ sub writeGuardianNewsTweet {
                     );
 
                     # get shortened Guardian URL
-                    $gurl = get( $self->url_shortener . $results[0]->{webUrl} );
+                    $gurl = $self->shortenUrl( Url => $results[0]->{webUrl} );
 
                     $messages[0] =~ s/_GURL_/$gurl/;
 
