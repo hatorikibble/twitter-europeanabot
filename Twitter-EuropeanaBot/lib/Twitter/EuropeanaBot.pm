@@ -531,7 +531,7 @@ sub post2Twitter {
         }
     }
 
-    $status = decode( ' utf8 ', $status );
+    $status = decode( 'utf8', $status );
     $self->log->info(
         "Posting Status: " . $status . " (" . length($status) . ")" );
 
