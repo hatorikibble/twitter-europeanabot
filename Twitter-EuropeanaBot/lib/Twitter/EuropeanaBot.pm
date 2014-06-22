@@ -6,7 +6,7 @@ Twitter::EuropeanaBot - The great new Twitter::EuropeanaBot!
 
 =head1 VERSION
 
-Version 1.7.2
+Version 1.8
 
 =cut
 
@@ -46,7 +46,7 @@ use URI::Escape;
 
 use Data::Dumper;
 
-our $VERSION = '1.7.2';
+our $VERSION = '1.8';
 
 use Moose;
 
@@ -70,14 +70,17 @@ has 'twitter_consumer_secret' => ( is => 'ro', isa => 'Str',  required => 1 );
 has 'twitter_access_token'    => ( is => 'ro', isa => 'Str',  required => 1 );
 has 'twitter_access_token_secret' =>
   ( is => 'ro', isa => 'Str', required => 1 );
-has 'url_shortener'    => ( is => 'ro', isa => 'Str',  required => 1 );
-has 'location_file'    => ( is => 'ro', isa => 'File', required => 1 );
-has 'nobel_file'       => ( is => 'ro', isa => 'File', required => 1 );
-has 'capitals_file'    => ( is => 'ro', isa => 'File', required => 1 );
-has 'guardian_api_key' => ( is => 'ro', isa => 'Str',  required => 1 );
-has 'guardian_api_url' => ( is => 'ro', isa => 'Str',  required => 1 );
-has 'wordnik_api_key'  => ( is => 'ro', isa => 'Str',  required => 1 );
-has 'wordnik_api_url'  => ( is => 'ro', isa => 'Str',  required => 1 );
+has 'url_shortener'       => ( is => 'ro', isa => 'Str',  required => 1 );
+has 'location_file'       => ( is => 'ro', isa => 'File', required => 1 );
+has 'nobel_file'          => ( is => 'ro', isa => 'File', required => 1 );
+has 'capitals_file'       => ( is => 'ro', isa => 'File', required => 1 );
+has 'guardian_api_key'    => ( is => 'ro', isa => 'Str',  required => 1 );
+has 'guardian_api_url'    => ( is => 'ro', isa => 'Str',  required => 1 );
+has 'wordnik_api_key'     => ( is => 'ro', isa => 'Str',  required => 1 );
+has 'wordnik_api_url'     => ( is => 'ro', isa => 'Str',  required => 1 );
+has 'kimono_api_key'      => ( is => 'ro', isa => 'Str',  required => 1 );
+has 'kimono_api_url'      => ( is => 'ro', isa => 'Str',  required => 1 );
+has 'restcountry_api_url' => ( is => 'ro', isa => 'Str',  required => 1 );
 has 'user_agent' => ( is => 'ro', isa => 'Str', default => "EuropeanaBot" );
 has 'wikipedia_base' =>
   ( is => 'ro', isa => 'Str', default => "http://en.wikipedia.org" );
@@ -151,7 +154,7 @@ after start => sub {
             $random = 103;
         }
 
-        # $random = 46;
+        #$random = 104;
 
         eval {
             switch ($random) {
@@ -159,8 +162,10 @@ after start => sub {
                 case [ 3 .. 5 ] {
                     $self->writeUnicornTweet();
                 }
-                case [ 6 .. 25 ]{ $self->writeLocationTweet(); }
-                case [ 26 .. 35 ]{ $self->writeNobelTweet(); }
+                case [ 6 .. 20 ]{ $self->writeLocationTweet(); }
+                case [ 21 .. 35 ]{ $self->writeSoccerWorldCupTweet(); }
+
+                # case [ 26 .. 35 ]{ $self->writeNobelTweet(); }
                 case [ 36 .. 45 ]{ $self->writeCapitalsTweet(); }
                 case [ 46 .. 65 ] { $self->writeGuardianNewsTweet() };
                 case [ 66 .. 75 ] { $self->writeAnniversaryTweet(); }
@@ -419,7 +424,7 @@ sub getEuropeanaResults {
     $self->log->debug( "QueryString is: " . $query_string );
     if ( $json_result = get $query_string) {
         $result_ref = decode_json($json_result);
-        $self->log->debug( "Result: " . $result_ref->{itemsCount} ." items" );
+        $self->log->debug( "Result: " . $result_ref->{itemsCount} . " items" );
         if ( $result_ref->{itemsCount} > 0 ) {
 
             # custom enrichment
@@ -546,14 +551,15 @@ sub post2Twitter {
         #}
         #else {
 
-            eval { $nt_result = $self->{Twitter}->update($status); };
-            if ($@) {
-                $self->logger->error( "Error posting to "
-                      . $self->twitter_account . ": "
-                      . $@
-                      . "!" );
+        eval { $nt_result = $self->{Twitter}->update($status); };
+        if ($@) {
+            $self->logger->error( "Error posting to "
+                  . $self->twitter_account . ": "
+                  . $@
+                  . "!" );
 
-            }
+        }
+
         #}
 
         # $self->log->debug( Dumper($nt_result) );
@@ -977,6 +983,104 @@ sub writeWordnikWordOfTheDayTweet {
             $self->log->error("Activating Fallback-Cat!");
             $self->writeCatTweet();
         }
+
+    }
+    else {
+        $self->log->error( "Problem with request: " . $request );
+
+        $self->log->error("Activating Fallback-Cat!");
+        $self->writeCatTweet();
+        return;
+
+    }
+
+}
+
+=head2 writeSoccerWorldCupTweet()
+
+posts a tweet about a soccer team
+
+=cut
+
+sub writeSoccerWorldCupTweet {
+    my $self               = shift;
+    my $request            = undef;
+    my $result_ref         = undef;
+    my $country_result_ref = undef;
+    my $json_result        = undef;
+    my @teams              = ();
+
+    my @messages = (
+"The soccer team of \#_COUNTRY_ takes part in \#WM2014: \#europeana has a picture: _URL_ from _YEAR_",
+"A \#europeana picture of the soccer team of \#_COUNTRY_ at _YEAR_: _URL_ \#WM2014",
+"\#WM2014 and \#_COUNTRY_ is in it. Here's the #europeana picture from _YEAR_: _URL_"
+    );
+    @messages = shuffle @messages;
+
+    $self->log->debug("I'm gonna tweet about a soccer team!");
+
+    $ua->agent( $self->user_agent );
+
+    $request =
+        $self->kimono_api_url
+      . "teams?apikey="
+      . $self->kimono_api_key
+      . "&limit=250";
+
+    $json_result = get($request);
+    $result_ref  = decode_json($json_result);
+
+    $self->log->debug( "Result is: " . Dumper($result_ref) );
+
+    if ( defined($result_ref)
+        && ( ref($result_ref) eq 'ARRAY' ) )
+
+    {
+        @teams = shuffle @{$result_ref};
+
+        foreach my $team (@teams) {
+
+            $self->log->debug(
+                "Trying to find a picture about the soccer team of "
+                  . $team->{name} );
+
+            $result_ref = $self->getEuropeanaResults(
+                Query => "soccer " . $team->{name},
+                Field => 'title',
+                Type  => 'IMAGE',
+                Rows  => 10
+            );
+
+            if ( $result_ref->{Status} eq 'OK' ) {
+
+                # try to get country code
+                $request = $self->restcountry_api_url . "name/" . $team->{name};
+
+                $json_result        = get($request);
+                $country_result_ref = decode_json($json_result);
+                if (   ( ref($country_result_ref) eq 'ARRAY' )
+                    && ( defined( $country_result_ref->[0]->{alpha3Code} ) ) )
+                {
+
+                    $self->log->debug( "Country is: "
+                          . $country_result_ref->[0]->{alpha3Code} );
+
+                    $messages[0] =~
+                      s/_COUNTRY_/$country_result_ref->[0]->{alpha3Code}/;
+
+                    $self->post2Twitter(
+                        Result  => $result_ref,
+                        Message => $messages[0]
+                    );
+
+                    return;
+                }
+            }
+        }
+
+        # no picture for any team
+        $self->log->error("Activating Fallback-Cat!");
+        $self->writeCatTweet();
 
     }
     else {
