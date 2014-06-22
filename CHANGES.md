@@ -63,14 +63,14 @@ Version 1.7 "The European Edition"
 -----------------------------------
 
 * The bot now uses a list or
-  [European capitals|http://opengeocode.org/download/cow.php] to
+  [European capitals](http://opengeocode.org/download/cow.php) to
   present some images
 
-* minor tweak: Guardian keywords are now [Hashtags|http://en.wikipedia.org/wiki/Hashtag]
+* minor tweak: Guardian keywords are now [Hashtags](http://en.wikipedia.org/wiki/Hashtag)
 
 Version 1.8 "The Soccer World Cup Edition"
 -----------------------------------
 
 * Somehow surprisingly the bot is soccer fan and uses
-  [The (un)official World Cup API|http://www.kimonolabs.com/worldcup/explorer]
+  [The (un)official World Cup API](http://www.kimonolabs.com/worldcup/explorer)
   to get the competing teams and find relevant Europeana Pictures
