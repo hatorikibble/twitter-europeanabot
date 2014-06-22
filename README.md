@@ -66,6 +66,16 @@ More Information
 ==================
 
 * Inspiration: [DPLABot] (https://twitter.com/DPLAbot)
+
+Talks
+-----
+
+* June 2014: 103. Deutscher Bibliothekartag: [*"Lasst digitale Sammlungen sprechen!" - TwitterBots, Tumblr und die Rückkehr des Serendipitätsprinzips*](http://www.opus-bayern.de/bib-info/volltexte/2014/1552/)
+* June 2014: ELAG 2014: [*EuropeanaBot – using open data and open APIs to present digital collections*](http://elag2014.org/programme/elag-workshops-list-page/12-6/) [Slides](http://www.slideshare.net/hatorikibble/elag-mayr-europeanabot1)
+
+Blog posts
+-----------
+
 * [Blogpost in German] (https://hatorikibble.wordpress.com/2013/07/19/ich-hab-da-mal-einen-osterreichischen-europeana-bot-geschrieben/)
 * [Blogpost in German about Version 1.1] (http://hatorikibble.wordpress.com/2013/07/22/der-europeanabot-mag-jetzt-auch-katzen/)
 * [Blogpost in German about Version 1.2] (http://hatorikibble.wordpress.com/2013/08/01/jede-menge-nobelpreise-fur-den-europeanabot/)
@@ -73,3 +83,5 @@ More Information
 * [Blogpost in German about Version 1.4] (http://hatorikibble.wordpress.com/2013/09/16/der-europeanabot-liest-jetzt-auch-den-guardian/)
 * [Blogpost in German about Version 1.5] (https://hatorikibble.wordpress.com/2013/11/03/der-europeanabot-schaut-zuruck/)
 * [Blogpost in German about Version 1.6] (https://hatorikibble.wordpress.com/2014/02/08/der-europeanabot-lernt-vokabeln/)
+* [Blogpost in German about Version 1.7] (https://hatorikibble.wordpress.com/2014/03/20/der-europeanabot-jetzt-noch-europaischer/)
+* [Blogpost in German about Version 1.8] (https://hatorikibble.wordpress.com/2014/06/22/den-europeanabot-zum-fusballschauen-geschickt/)
