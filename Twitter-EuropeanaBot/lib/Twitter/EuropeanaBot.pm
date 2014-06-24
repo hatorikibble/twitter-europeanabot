@@ -70,17 +70,17 @@ has 'twitter_consumer_secret' => ( is => 'ro', isa => 'Str',  required => 1 );
 has 'twitter_access_token'    => ( is => 'ro', isa => 'Str',  required => 1 );
 has 'twitter_access_token_secret' =>
   ( is => 'ro', isa => 'Str', required => 1 );
-has 'url_shortener'       => ( is => 'ro', isa => 'Str',  required => 1 );
-has 'location_file'       => ( is => 'ro', isa => 'File', required => 1 );
-has 'nobel_file'          => ( is => 'ro', isa => 'File', required => 1 );
-has 'capitals_file'       => ( is => 'ro', isa => 'File', required => 1 );
-has 'guardian_api_key'    => ( is => 'ro', isa => 'Str',  required => 1 );
-has 'guardian_api_url'    => ( is => 'ro', isa => 'Str',  required => 1 );
-has 'wordnik_api_key'     => ( is => 'ro', isa => 'Str',  required => 1 );
-has 'wordnik_api_url'     => ( is => 'ro', isa => 'Str',  required => 1 );
-has 'kimono_api_key'      => ( is => 'ro', isa => 'Str',  required => 1 );
-has 'kimono_api_url'      => ( is => 'ro', isa => 'Str',  required => 1 );
-has 'restcountry_api_url' => ( is => 'ro', isa => 'Str',  required => 1 );
+has 'url_shortener'    => ( is => 'ro', isa => 'Str',  required => 1 );
+has 'location_file'    => ( is => 'ro', isa => 'File', required => 1 );
+has 'nobel_file'       => ( is => 'ro', isa => 'File', required => 1 );
+has 'capitals_file'    => ( is => 'ro', isa => 'File', required => 1 );
+has 'guardian_api_key' => ( is => 'ro', isa => 'Str',  required => 1 );
+has 'guardian_api_url' => ( is => 'ro', isa => 'Str',  required => 1 );
+has 'wordnik_api_key'  => ( is => 'ro', isa => 'Str',  required => 1 );
+has 'wordnik_api_url'  => ( is => 'ro', isa => 'Str',  required => 1 );
+has 'kimono_api_key'   => ( is => 'ro', isa => 'Str',  required => 1 );
+has 'kimono_api_url'   => ( is => 'ro', isa => 'Str',  required => 1 );
+has 'country_file'     => ( is => 'ro', isa => 'File', required => 1 );
 has 'user_agent' => ( is => 'ro', isa => 'Str', default => "EuropeanaBot" );
 has 'wikipedia_base' =>
   ( is => 'ro', isa => 'Str', default => "http://en.wikipedia.org" );
@@ -124,6 +124,8 @@ after start => sub {
 
     $self->createCapitalsSeeds();
 
+    $self->createCountryHash();
+
     while (1) {
 
         # what shall we do? let's roll the dice?
@@ -154,7 +156,7 @@ after start => sub {
             $random = 103;
         }
 
-        #$random = 104;
+        # $random = 21;
 
         eval {
             switch ($random) {
@@ -367,6 +369,38 @@ sub createCapitalsSeeds {
     $self->{CapitalsSeeds} = \@seeds;
 
 } ## end sub createSeed
+
+=head2 createCountryHash()
+
+reads the contents of C<$self->country_file> 
+and creates C<$self->{CountryHash}> to lookup FIFA Country Codes
+
+=cut
+
+sub createCountryHash {
+    my $self     = shift;
+    my $Csv      = new Text::xSV( sep => "," );
+    my %codeHash = ();
+    my $country  = undef;
+    my $code     = undef;
+
+    $self->log->debug( "Creating hash from file: " . $self->country_file );
+
+    # source and metadata_ref at http://data.okfn.org/data/core/country-codes
+
+    $Csv->open_file( $self->country_file );
+    $Csv->read_header();
+
+    while ( $Csv->get_row() ) {
+        ( $country, $code ) = $Csv->extract(qw(name FIFA));
+        $codeHash{$country} = $code;
+    }
+
+    $self->log->debug( scalar( keys %codeHash ) . " items found" );
+
+    $self->{CountryHash} = \%codeHash;
+
+}
 
 =head2 getEuropeanaResults(Query=>'Linz', Field=>'title', Type=>'IMAGE', Rows=>10)
 
@@ -1009,6 +1043,7 @@ sub writeSoccerWorldCupTweet {
     my $country_result_ref = undef;
     my $json_result        = undef;
     my @teams              = ();
+    my %codeHash           = %{ $self->{CountryHash} };
 
     my @messages = (
 "The soccer team of \#_COUNTRY_ takes part in \#WM2014: \#europeana has a picture: _URL_ from _YEAR_",
@@ -1030,7 +1065,7 @@ sub writeSoccerWorldCupTweet {
     $json_result = get($request);
     $result_ref  = decode_json($json_result);
 
-    $self->log->debug( "Result is: " . Dumper($result_ref) );
+    #$self->log->debug( "Result is: " . Dumper($result_ref) );
 
     if ( defined($result_ref)
         && ( ref($result_ref) eq 'ARRAY' ) )
@@ -1054,20 +1089,11 @@ sub writeSoccerWorldCupTweet {
             if ( $result_ref->{Status} eq 'OK' ) {
 
                 # try to get country code
-                $request = $self->restcountry_api_url . "name/" . $team->{name};
-
-                $json_result        = get($request);
-                $country_result_ref = decode_json($json_result);
-                if (   ( ref($country_result_ref) eq 'ARRAY' )
-                    && ( defined( $country_result_ref->[0]->{alpha3Code} ) ) )
-                {
-
-                    $self->log->debug( "Country is: "
-                          . $country_result_ref->[0]->{alpha3Code} );
-
-                    $messages[0] =~
-                      s/_COUNTRY_/$country_result_ref->[0]->{alpha3Code}/;
-
+                if ( exists( $codeHash{ $team->{name} } ) ) {
+                    $self->log->debug( "FIFA code for "
+                          . $team->{name} . " is: "
+                          . $codeHash{ $team->{name} } );
+                    $messages[0] =~ s/_COUNTRY_/$codeHash{$team->{name}}/;
                     $self->post2Twitter(
                         Result  => $result_ref,
                         Message => $messages[0]
@@ -1075,6 +1101,12 @@ sub writeSoccerWorldCupTweet {
 
                     return;
                 }
+                else {
+                    $self->log->error(
+                        "No FIFA code for " . $team->{name} . " found!" );
+
+                }
+
             }
         }
 

@@ -20,7 +20,7 @@
  "wordnik_api_url": "http://api.wordnik.com:80/v4/",
  "kimono_api_key": "XXX",
  "kimono_api_url": "http://worldcup.kimonolabs.com/api/",
- "restcountry_api_url": "http://restcountries.eu/rest/v1/",
+ "country_file": "/tmp/country-codes.csv",
  "user_agent": "EuropeanaBot (https://github.com/hatorikibble/twitter-europeanabot)",
  "sleep_time": 1000
 }
