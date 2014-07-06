@@ -6,7 +6,7 @@ Twitter::EuropeanaBot - The great new Twitter::EuropeanaBot!
 
 =head1 VERSION
 
-Version 1.8
+Version 1.8.1
 
 =cut
 
@@ -46,7 +46,7 @@ use URI::Escape;
 
 use Data::Dumper;
 
-our $VERSION = '1.8';
+our $VERSION = '1.8.1';
 
 use Moose;
 
@@ -142,16 +142,16 @@ after start => sub {
             $random = 101;
         }
 
-        # Friday, 13 o'clock
+        # Friday, 14 o'clock
         if (
             ( POSIX::strftime( "%u", localtime() ) == 5 )    # Friday
-            && ( POSIX::strftime( "%H", localtime() ) eq '13' )
+            && ( POSIX::strftime( "%H", localtime() ) eq '14' )
           )
         {
             $random = 102;
         }
 
-        # Everyday 11 o'clock is vocab time!
+        # Everyday 1 o'clock is vocab time!
         if ( POSIX::strftime( "%H", localtime() ) eq '13' ) {
             $random = 103;
         }
