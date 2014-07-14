@@ -164,10 +164,9 @@ after start => sub {
                 case [ 3 .. 5 ] {
                     $self->writeUnicornTweet();
                 }
-                case [ 6 .. 20 ]{ $self->writeLocationTweet(); }
-                case [ 21 .. 35 ]{ $self->writeSoccerWorldCupTweet(); }
-
-                # case [ 26 .. 35 ]{ $self->writeNobelTweet(); }
+                case [ 6 .. 25 ]{ $self->writeLocationTweet(); }
+                # case [ 21 .. 35 ]{ $self->writeSoccerWorldCupTweet(); }
+                case [ 26 .. 35 ]{ $self->writeNobelTweet(); }
                 case [ 36 .. 45 ]{ $self->writeCapitalsTweet(); }
                 case [ 46 .. 65 ] { $self->writeGuardianNewsTweet() };
                 case [ 66 .. 75 ] { $self->writeAnniversaryTweet(); }
