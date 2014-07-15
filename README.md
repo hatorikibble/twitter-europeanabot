@@ -71,7 +71,7 @@ Talks
 -----
 
 * June 2014: 103. Deutscher Bibliothekartag: [*"Lasst digitale Sammlungen sprechen!" - TwitterBots, Tumblr und die Rückkehr des Serendipitätsprinzips*](http://www.opus-bayern.de/bib-info/volltexte/2014/1552/)
-* June 2014: ELAG 2014: [*EuropeanaBot – using open data and open APIs to present digital collections*](http://elag2014.org/programme/elag-workshops-list-page/12-6/) [Slides](http://www.slideshare.net/hatorikibble/elag-mayr-europeanabot1)
+* June 2014: ELAG 2014: [*EuropeanaBot – using open data and open APIs to present digital collections*](http://elag2014.org/programme/elag-workshops-list-page/12-6/) ([Slides](http://www.slideshare.net/hatorikibble/elag-mayr-europeanabot1), [Video](https://www.youtube.com/watch?v=l_i-_2YEpT0))
 
 Blog posts
 -----------
