@@ -2,4 +2,5 @@ language: perl
 perl:
   - "5.20"
   - "5.18"
+
 script: bash -c"cd Twitter-EuropeanaBot && make && make test"
