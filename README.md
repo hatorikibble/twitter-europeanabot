@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.org/hatorikibble/twitter-europeanabot.svg)](https://travis-ci.org/hatorikibble/twitter-europeanabot)
-
 twitter-europeanabot
 ====================
 
