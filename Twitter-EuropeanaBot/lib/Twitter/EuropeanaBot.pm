@@ -421,7 +421,7 @@ which index to use
 
 type of result, defaults to  I<IMAGE>
 
-=items * Rows
+=item * Rows
 
 how many rows should be returned, defaults to C<1>
 
