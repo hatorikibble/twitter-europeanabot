@@ -2,5 +2,11 @@ language: perl
 perl:
   - "5.20"
   - "5.18"
-
-script: bash -c"cd Twitter-EuropeanaBot && make && make test"
+install:
+# Deal with dependencies
+- cpanm --notest --installdeps ./Twitter-EuropeanaBot
+script:
+- cd TazDownloader
+- perl Makefile.PL
+- make
+- make test
