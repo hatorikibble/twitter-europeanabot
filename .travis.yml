@@ -6,7 +6,7 @@ install:
 # Deal with dependencies
 - cpanm --notest --installdeps ./Twitter-EuropeanaBot
 script:
-- cd TazDownloader
+- cd Twitter-EuropeanaBot
 - perl Makefile.PL
 - make
 - make test
