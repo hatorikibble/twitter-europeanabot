@@ -87,3 +87,4 @@ Blog posts
 * [Blogpost in German about Version 1.6] (https://hatorikibble.wordpress.com/2014/02/08/der-europeanabot-lernt-vokabeln/)
 * [Blogpost in German about Version 1.7] (https://hatorikibble.wordpress.com/2014/03/20/der-europeanabot-jetzt-noch-europaischer/)
 * [Blogpost in German about Version 1.8] (https://hatorikibble.wordpress.com/2014/06/22/den-europeanabot-zum-fusballschauen-geschickt/)
+
