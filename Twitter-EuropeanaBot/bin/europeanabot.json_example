@@ -23,4 +23,5 @@
  "country_file": "/tmp/country-codes.csv",
  "user_agent": "EuropeanaBot (https://github.com/hatorikibble/twitter-europeanabot)",
  "sleep_time": 1000
+ "sleep_time_margin" : 0
 }

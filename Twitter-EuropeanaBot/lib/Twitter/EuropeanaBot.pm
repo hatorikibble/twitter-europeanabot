@@ -86,6 +86,7 @@ has 'wikipedia_base' =>
   ( is => 'ro', isa => 'Str', default => "http://en.wikipedia.org" );
 
 has 'sleep_time' => ( is => 'ro', isa => 'Int', default => 2000 );
+has 'sleep_time_margin' => (is => 'ro', isa => 'Int', default=>100);
 
 no Moose::Util::TypeConstraints;
 
@@ -109,6 +110,7 @@ after start => sub {
     my @seeds      = ();
     my $range      = 100;
     my $random     = undef;
+    my $actual_sleep_time = undef;
 
     return unless $self->is_daemon;
 
@@ -184,10 +186,13 @@ after start => sub {
             $self->log->error( "Oh problem!: " . $@ );
         }
         else {
+            $actual_sleep_time = $self->sleep_time + 
+            ( $self->sleep_time_margin 
+            - int(rand($self->sleep_time_margin*2)) );
 
             $self->log->debug(
-                "I'm going to sleep for " . $self->sleep_time . " seconds.." );
-            sleep( $self->sleep_time );
+                "I'm going to sleep for " . $actual_sleep_time . " seconds.." );
+            sleep( $actual_sleep_time );
         }
 
     }

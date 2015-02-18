@@ -64,6 +64,10 @@ Rename `logging.conf_example` to `logging.conf` and edit if necessary. Rename è
 * *sleep_time*
     interval between searches
 
+* *sleep_time_margin*
+    add a little random variation, to maybe fool Twitters bot detection
+	algorithm ;-)
+
 More Information
 ==================
 
