@@ -824,7 +824,7 @@ sub writeRandomWikipediaTweet {
             "Result: " . $result_ref->{query}->{random}->[0]->{title} );
 
         if ( $title = $result_ref->{query}->{random}->[0]->{title} ) {
-
+            $title = encode('utf-8', $title);  # Test
             $result_ref = $self->getEuropeanaResults(
                 Query => "\"" . $title . "\"",
                 Field => 'title',
