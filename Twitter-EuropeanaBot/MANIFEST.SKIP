@@ -1,0 +1,8 @@
+# config files
+\.json
+\.conf
+# Temp, old and emacs backup files.
+~$
+\.old$
+^#.*#$
+^\.#
