@@ -6,7 +6,7 @@ Twitter::EuropeanaBot - The great new Twitter::EuropeanaBot!
 
 =head1 VERSION
 
-Version 1.8.1
+Version 1.8.2
 
 =cut
 
@@ -42,6 +42,7 @@ use Net::Twitter;
 use POSIX;
 use Switch;
 use Text::xSV;
+use Try::Tiny;
 use URI::Escape;
 
 use Data::Dumper;
@@ -72,7 +73,7 @@ has 'twitter_access_token_secret' =>
   ( is => 'ro', isa => 'Str', required => 1 );
 has 'url_shortener'    => ( is => 'ro', isa => 'Str',  required => 1 );
 has 'location_file'    => ( is => 'ro', isa => 'File', required => 1 );
-has 'nobel_file'       => ( is => 'ro', isa => 'File', required => 1 );
+has 'nobel_csv_url'       => ( is => 'ro', isa => 'Str', required => 1 );
 has 'capitals_file'    => ( is => 'ro', isa => 'File', required => 1 );
 has 'guardian_api_key' => ( is => 'ro', isa => 'Str',  required => 1 );
 has 'guardian_api_url' => ( is => 'ro', isa => 'Str',  required => 1 );
@@ -158,7 +159,7 @@ after start => sub {
             $random = 103;
         }
 
-        # $random = 21;
+        # $random = 27;
 
         eval {
             switch ($random) {
@@ -287,33 +288,38 @@ sub createLocationSeeds {
 
 =head2 createNobelSeeds()
 
-reads the contents of C<$self->nobel_file> 
+reads the contents of remote C<$self->nobel_file> 
 and creates C<$self->{NobelSeeds}>
 
 =cut
 
 sub createNobelSeeds {
     my $self = shift;
-
+    my $content = undef;
     my @lines = ();
 
-    $self->log->debug( "Creating seeds from file: " . $self->nobel_file );
-    eval { @lines = read_file( $self->nobel_file ); };
-    if ($@) {
+    $self->log->debug( "Creating seeds from URL: " . $self->nobel_csv_url );
+
+    try { 
+      $content = get $self->nobel_csv_url; 
+    }catch{
         $self->log->error(
-            "Cannot read seed_file " . $self->nobel_file . ": " . $@ );
-        return \@lines;
-
-    }
-    else {
-
+            "Cannot read seed_file " . $self->nobel_csv_url . ": " . $_ );
+        return \@lines; 
+    };
+    @lines = split(/\n/, $content );
+    
+    # sanity check
+    if ($lines[0] =~ /^year,category,overallMotivation,id,firstname,surname,motivation,share/){
         @lines = @lines[ 1 .. $#lines ];
 
         # we don't need the header..
 
         $self->log->debug( scalar(@lines) . " searchterms generated" );
+      }else{
+	$self->log->error("Content not in expected format: ".substr($content,0,80));
+      }
         $self->{NobelSeeds} = \@lines;
-    }
 
 } ## end sub createSeed
 
